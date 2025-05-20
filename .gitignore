@@ -54,4 +54,3 @@ app/tests/*
 /app/common/__init__.py
 /magic_pdf/config/__init__.py
 /zpiyush_tests/
-data/

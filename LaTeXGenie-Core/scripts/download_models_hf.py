@@ -49,7 +49,7 @@ if __name__ == '__main__':
     print(f'model_dir is: {model_dir}')
     print(f'layoutreader_model_dir is: {layoutreader_model_dir}')
 
-    json_path = 'LaTeXGenie-Core/magic-pdf.template.json'
+    json_path = 'LaTeXGenie-Worker/LaTeXGenie-Core/magic-pdf.template.json'
     config_file_name = 'magic-pdf.json'
     home_dir = os.path.expanduser('~')
     config_file = os.path.join(home_dir, config_file_name)
