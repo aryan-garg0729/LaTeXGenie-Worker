@@ -31,8 +31,8 @@ def process_job(job):
         file_data = supabase.storage.from_("latexgenie").download(pdf_path)
 
         # --- Step 2: Save the file locally ---
-        os.makedirs("../data",exist_ok=True)
-        with open("../data/input.pdf", "wb") as f:
+        os.makedirs("LaTeXGenie-Worker/data",exist_ok=True)
+        with open("LaTeXGenie-Worker/data/input.pdf", "wb") as f:
             f.write(file_data)
 
         # --- Step 3: Process file ---

@@ -487,14 +487,14 @@ def handler(args):
     convert_pdf()
 
     # open the required file
-    with open("../data/ouput/input/auto/input_content_list.json", "r", encoding="utf-8") as f:
+    with open("LaTeXGenie-Worker/data/ouput/input/auto/input_content_list.json", "r", encoding="utf-8") as f:
         miner_data = json.load(f)
 
     latex_output, title, _ = json_to_latex(miner_data, args.column)
 
     # generate header and references from the grobid
     # journal_type = "elsevier"
-    pdf_path = "../data/output/input/auto/input_origin.pdf"
+    pdf_path = "LaTeXGenie-Worker/data/output/input/auto/input_origin.pdf"
     header , references = generate_header_and_references(journal_type=args.journal,pdf_path=pdf_path, title=title)
     # header , references = generate_header_and_references(journal_type=args.journal,pdf_path=args.pdf,title=title)
     
@@ -526,10 +526,10 @@ def handler(args):
     safe_remove_dir("output/images")
     os.makedirs("output/images", exist_ok=True)
     
-    if os.path.exists('unzipped_output/input/auto/images'):
-        for file in os.listdir("unzipped_output/input/auto/images"):
+    if os.path.exists('LaTeXGenie-Worker/data/output/input/auto/images'):
+        for file in os.listdir("LaTeXGenie-Worker/data/output/input/auto/images"):
             if file.endswith(".png") or file.endswith(".jpg"):
-                src_path = os.path.join("unzipped_output/input/auto/images", file)
+                src_path = os.path.join("LaTeXGenie-Worker/data/output/input/auto/images", file)
                 dest_path = os.path.join("output/images", file)
                 with open(src_path, "rb") as src_file:
                     with open(dest_path, "wb") as dest_file:
