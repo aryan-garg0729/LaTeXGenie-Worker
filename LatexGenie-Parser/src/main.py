@@ -9,7 +9,7 @@ import zipfile
 import argparse
 from bs4 import BeautifulSoup
 # Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..","..")))
 from src.logger import Logger
 from parsers.anystyleRef import get_bib_file
 from parsers.render_bib_map import citation_map
@@ -459,12 +459,12 @@ def knowledge_extractor(args):
 
 def convert_pdf():
 
-    input_path = '../data/input.pdf'
-    output_dir = '../data/output'
+    input_path = 'LaTeXGenie-Worker/data/input.pdf'
+    output_dir = 'LaTeXGenie-Worker/data/output'
 
     os.system(f'rm -rf {output_dir}')
 
-    os.system(f'python ../LaTeXGenie-Core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
+    os.system(f'python LaTeXGenie-Worker/LaTeXGenie-Core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
 
 
     return True
