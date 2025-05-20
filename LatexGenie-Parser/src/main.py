@@ -487,7 +487,7 @@ def handler(args):
     convert_pdf()
 
     # open the required file
-    with open("LaTeXGenie-Worker/data/ouput/input/auto/input_content_list.json", "r", encoding="utf-8") as f:
+    with open("LaTeXGenie-Worker/data/output/input/auto/input_content_list.json", "r", encoding="utf-8") as f:
         miner_data = json.load(f)
 
     latex_output, title, _ = json_to_latex(miner_data, args.column)
