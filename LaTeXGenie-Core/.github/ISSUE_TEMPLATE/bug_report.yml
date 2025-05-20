@@ -1,0 +1,130 @@
+name: 🐛 Bug Report
+description: Create a bug report for MinerU
+labels: bug
+
+# We omit `title: "..."` so that the field defaults to blank. If we set it to
+# empty string, Github seems to reject this .yml file.
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for submitting a MinerU 🐛 Bug Report!
+
+  - type: checkboxes
+    attributes:
+      label: 🔎 Search before asking
+      description: >
+        Please search the MinerU [Readme](https://github.com/opendatalab/MinerU), [Issues](https://github.com/opendatalab/MinerU/issues) and [Discussions](https://github.com/opendatalab/MinerU/discussions) to see if a similar bug report already exists.
+      options:
+        - label: I have searched the MinerU [Readme](https://github.com/opendatalab/MinerU) and found no similar bug report.
+          required: true
+        - label: I have searched the MinerU [Issues](https://github.com/opendatalab/MinerU/issues) and found no similar bug report.
+          required: true
+        - label: I have searched the MinerU [Discussions](https://github.com/opendatalab/MinerU/discussions) and found no similar bug report.
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the bug
+      description: |
+        Provide console output with error messages and/or screenshots of the bug.
+      placeholder: |
+        💡 ProTip! Include as much information as possible (screenshots, logs, tracebacks etc.) to receive the most helpful response.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce the bug
+      
+      # Should not word-wrap this description here.
+      description: |
+        If you have questions about the parsing results or encounter errors during execution:
+        * Provide a minimal reproducible example.
+        * The demo should include the complete steps, code, and the PDF file to be parsed.
+        * When reporting parsing result anomalies and runtime errors, reproducible PDF files are essential. If the document is too large or confidential, you can print the problematic page(s) via the browser and submit the corresponding example file.
+        
+        For problems when building or installing MinerU:
+        * Give the **exact** build/install commands that were run.
+        * Give the **complete** output from these commands.
+  
+    validations:
+      required: true
+
+#  - type: markdown
+#    attributes:
+#      value: |
+#        # The information below is required.
+
+
+  - type: dropdown
+    id: os_mode
+    attributes:
+      label: Operating System Mode
+      #multiple: true
+      options:
+        -
+        - Windows
+        - Linux
+        - MacOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: os_name_version
+    attributes:
+      label: Operating System Version
+      #multiple: true
+      description: |
+        * If you are using a Linux system, please provide the Linux distribution and version number to help developers troubleshoot the issue.
+        * If you are using a Windows or MacOS system, please provide the version number of the operating system to help developers troubleshoot the issue.
+        * For example: Ubuntu 22.04, CentOS 7.9, MacOS 15.1, Windows 11.
+
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python_version
+    attributes:
+      label: Python version
+      #multiple: true
+      # Need quotes around `3.10` otherwise it is treated as a number and shows as `3.1`.
+      options:
+        -
+        - "3.13"
+        - "3.12"
+        - "3.11"
+        - "3.10"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: software_version
+    attributes:
+      label: Software version (magic-pdf --version)
+      #multiple: false
+      options:
+        -
+        - "1.0.x"
+        - "1.1.x"
+        - "1.2.x"
+        - "1.3.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device_mode
+    attributes:
+      label: Device mode
+      #multiple: true
+      options:
+        -
+        - cpu
+        - cuda
+        - mps
+        - npu
+    validations:
+      required: true
