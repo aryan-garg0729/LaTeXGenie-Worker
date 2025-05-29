@@ -552,7 +552,6 @@ def generate_header_and_references(journal_type, pdf_path, title):
         start_grobid_server()
         wait_for_grobid_ready(20)
         # Step 2: Run curl to get structured XML from GROBID
-        os.makedirs(f"{os.getcwd()}/parsers/data", exist_ok=True)
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
         xml_output_path = f"parsers/data/{pdf_name}_structure_xml.xml"
         with open(xml_output_path, 'w') as output_file:

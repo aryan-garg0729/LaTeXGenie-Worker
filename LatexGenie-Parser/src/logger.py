@@ -1,8 +1,7 @@
 import logging
 import os
+from config import LOG_FILE
 
-log_file = "logs/log_file.log"
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
 class Logger:
     _instance = None  # Singleton instance
@@ -18,7 +17,7 @@ class Logger:
             Logger._instance.handlers.clear()
 
             # Create file and console handlers
-            file_handler = logging.FileHandler(log_file, encoding="utf-8")
+            file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
             stream_handler = logging.StreamHandler()
 
             # Updated log format with filename

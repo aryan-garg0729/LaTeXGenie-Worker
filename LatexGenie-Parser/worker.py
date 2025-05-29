@@ -27,11 +27,10 @@ def process_job(job):
 
         log.info(f"Running pipeline for job_id: {job['job_id']}")
 
-        # --- Step 1: Direct download from Supabase  ---
+        # --- Step 1: PDF Direct download from Supabase  ---
         file_data = supabase.storage.from_("latexgenie").download(pdf_path)
 
         # --- Step 2: Save the file locally ---
-        os.makedirs("LaTeXGenie-Worker/data",exist_ok=True)
         with open("LaTeXGenie-Worker/data/input.pdf", "wb") as f:
             f.write(file_data)
 
@@ -76,17 +75,19 @@ def process_job(job):
             "error": str(e)
         }
 
-try:
-    while True:
-        result = r.blpop("fileProcessingQueue", timeout=5)
-        if result:
-            _, job_raw = result
-            job = json.loads(job_raw)
-            output = process_job(job)
-            count = r.publish("latex_results", json.dumps(output))
-            log.info(f"Published {count} messages to 'latex_results' channel.")
-        else:
-            log.info("No jobs in the queue, waiting...")
-except KeyboardInterrupt:
-    log.info("Worker stopped by user.")
+def main():
+    try:
+        while True:
+            result = r.blpop("fileProcessingQueue", timeout=5)
+            if result:
+                _, job_raw = result
+                job = json.loads(job_raw)
+                output = process_job(job)
+                count = r.publish("latex_results", json.dumps(output))
+                log.info(f"Published {count} messages to 'latex_results' channel.")
+            else:
+                log.info("No jobs in the queue, waiting...")
+    except KeyboardInterrupt:
+        log.info("Worker stopped by user.")
+
 

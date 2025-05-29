@@ -1,3 +1,4 @@
+from config import COLAB_URL, OUTPUT_IMAGES_DIR, GENIE_OUTPUT_DIR
 import sys
 import os
 import json
@@ -8,8 +9,6 @@ import shutil
 import zipfile
 import argparse
 from bs4 import BeautifulSoup
-# Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..","..")))
 from src.logger import Logger
 from parsers.anystyleRef import get_bib_file
 from parsers.render_bib_map import citation_map
@@ -18,7 +17,7 @@ from utils.broken_char import generate_broken_combinations, replace_broken
 from parsers.header_parser import generate_header_and_references
 
 log = Logger.get_logger()
-
+GENIE_OUTPUT_ZIP = f"{GENIE_OUTPUT_DIR}/output.zip"
 broken_combinations = generate_broken_combinations()
 # --- HTML table to LaTeX conversion logic ---
 
@@ -422,7 +421,7 @@ def json_to_latex(data,column):
 
 def knowledge_extractor(args):
     # Replace this with your actual public ngrok URL from Colab
-    COLAB_URL = 'https://b8d7-34-34-95-167.ngrok-free.app'
+    
 
     # Local path to your test PDF
     pdf_path = args.pdf_path
@@ -523,22 +522,23 @@ def handler(args):
         f.write(latex_output)
 
     # copy images to output folder
-    safe_remove_dir("output/images")
-    os.makedirs("output/images", exist_ok=True)
+    safe_remove_dir(OUTPUT_IMAGES_DIR)
+    os.makedirs(OUTPUT_IMAGES_DIR, exist_ok=True)
     
     if os.path.exists('LaTeXGenie-Worker/data/output/input/auto/images'):
         for file in os.listdir("LaTeXGenie-Worker/data/output/input/auto/images"):
             if file.endswith(".png") or file.endswith(".jpg"):
                 src_path = os.path.join("LaTeXGenie-Worker/data/output/input/auto/images", file)
-                dest_path = os.path.join("output/images", file)
+                dest_path = os.path.join(OUTPUT_IMAGES_DIR, file)
                 with open(src_path, "rb") as src_file:
                     with open(dest_path, "wb") as dest_file:
                         dest_file.write(src_file.read())
     
     # zip the output folder
-    safe_remove_dir("genie_output")
-    os.makedirs("genie_output", exist_ok=True)
-    with zipfile.ZipFile("genie_output/output.zip", "w") as zipf:
+
+    safe_remove_dir(GENIE_OUTPUT_DIR)
+    os.makedirs(GENIE_OUTPUT_DIR, exist_ok=True)
+    with zipfile.ZipFile(GENIE_OUTPUT_ZIP, "w") as zipf:
         for root, dirs, files in os.walk("output"):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -559,7 +559,7 @@ def run_pipeline(pdf_path: str, column: str = "one", journal: str = "elsevier"):
     log.info(r"%%%% Starting JSON to LaTeX conversion... %%%%")
     handler(args)
     log.info(r"%%%% LaTeX file generated: output.tex %%%%")
-    return "genie_output/output.zip"
+    return GENIE_OUTPUT_ZIP
 
 # run_pipeline("input.pdf")
 
