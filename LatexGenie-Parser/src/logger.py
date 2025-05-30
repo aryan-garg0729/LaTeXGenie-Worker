@@ -1,7 +1,12 @@
 import logging
-import os
-from config import LOG_FILE
+from pathlib import Path
+from config import BASE_DIR
 
+# 👇 Ensure logs directory exists BEFORE configuring logging
+LOGS_DIR = Path(BASE_DIR) / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+LOG_FILE = LOGS_DIR / "log_file.log"
 
 class Logger:
     _instance = None  # Singleton instance

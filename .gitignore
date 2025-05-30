@@ -48,6 +48,7 @@ projects/web_demo/web_demo/static/
 source.dev.env
 
 # === Misc ===
+build/
 baadmei.txt
 sync1.sh
 app/tests/*

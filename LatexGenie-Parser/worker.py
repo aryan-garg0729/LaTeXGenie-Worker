@@ -90,4 +90,3 @@ def main():
     except KeyboardInterrupt:
         log.info("Worker stopped by user.")
 
-
