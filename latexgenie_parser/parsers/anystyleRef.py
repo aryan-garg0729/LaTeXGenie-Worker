@@ -1,7 +1,8 @@
 import subprocess
 import os
 import re
-from src.logger import Logger
+from config import REFERENCES_TXT
+from latexgenie_parser.src.logger import Logger
 
 log = Logger.get_logger()
 
@@ -53,12 +54,12 @@ def generate_bib(input_file, output_dir="output"):
 
 def get_bib_file(references=""):
     try:
-        reference_txt_file = "parsers/data/references.txt"
+        reference_txt_file = REFERENCES_TXT
 
         # Step 1: Format references (optional but recommended)
         formatted = format_references(references)
         write_file(reference_txt_file, formatted)
-        log.info("✅ Formatted references saved to parsers/data/references.txt")
+        log.info(f"✅ Formatted references saved to {REFERENCES_TXT}")
 
         # Step 2: Generate BibTeX
         generate_bib(reference_txt_file)

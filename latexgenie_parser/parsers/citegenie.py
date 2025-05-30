@@ -1,6 +1,6 @@
 import re
 from rapidfuzz import process, fuzz
-from src.logger import Logger
+from latexgenie_parser.src.logger import Logger
 log = Logger.get_logger()
 
 def normalize(text):

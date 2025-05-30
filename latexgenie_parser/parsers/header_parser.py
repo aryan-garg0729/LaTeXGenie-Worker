@@ -8,11 +8,10 @@ import os
 import time
 import shutil
 import json
-from src.logger import Logger
-
+from latexgenie_parser.src.logger import Logger
+from config import XML_OUTPUT, CONTAINER_NAME
 log = Logger.get_logger()
 
-CONTAINER_NAME = "grobid-server"
 
 def escape_latex(text):
     replacements = {
@@ -553,7 +552,7 @@ def generate_header_and_references(journal_type, pdf_path, title):
         wait_for_grobid_ready(20)
         # Step 2: Run curl to get structured XML from GROBID
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-        xml_output_path = f"parsers/data/{pdf_name}_structure_xml.xml"
+        xml_output_path = XML_OUTPUT
         with open(xml_output_path, 'w') as output_file:
             subprocess.run(
                 ["curl", "-s", "--form", f"input=@{pdf_path}", "http://localhost:8070/api/processFulltextDocument"],

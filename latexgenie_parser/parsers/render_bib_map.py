@@ -3,18 +3,16 @@ import subprocess
 import json
 import os
 from bs4 import BeautifulSoup
-from src.logger import Logger
-
+from latexgenie_parser.src.logger import Logger
+from config import DUMMY_MD,CITATION_MAP_JSON,OUTPUT_INLINE_HTML,CSL_DIR
 log = Logger.get_logger()
 
-output_inline_html = "parsers/data/output_inline.html"
-dummy_md = "parsers/data/dummy.md"
-citation_map_json="parsers/data/citation_map.json"
+
 csl_files = [
-    "parsers/csl/apa.csl",
-    "parsers/csl/mla.csl",
-    "parsers/csl/chicago.csl",
-    "parsers/csl/elsevier-harvard.csl",
+    f"{CSL_DIR}/apa.csl",
+    f"{CSL_DIR}/mla.csl",
+    f"{CSL_DIR}/chicago.csl",
+    f"{CSL_DIR}/elsevier-harvard.csl",
 ]
 def extract_bib_keys(bib_file):
     with open(bib_file, "r", encoding="utf-8") as f:
@@ -44,7 +42,7 @@ def generate_inline_citation_map(bib_file, output_json="src/reference/data/citat
         raise ValueError("No citation keys found in the .bib file.")
 
     # Write inline citations in one markdown file
-    with open(dummy_md, "w", encoding="utf-8") as f:
+    with open(DUMMY_MD, "w", encoding="utf-8") as f:
         f.write("# Inline Citations\n\n")
         for key in keys:
             f.write(f"[@{key}]\n\n")
@@ -56,16 +54,16 @@ def generate_inline_citation_map(bib_file, output_json="src/reference/data/citat
         # Run Pandoc to HTML with citeproc
         subprocess.run([
             "pandoc",
-            dummy_md,
+            DUMMY_MD,
             "--citeproc",
             f"--bibliography={bib_file}",
             f"--csl={csl_file}",
             "-t", "html",
-            "-o", output_inline_html
+            "-o", OUTPUT_INLINE_HTML
         ], check=True)
 
         # Parse HTML and extract spans with data-cites
-        with open(output_inline_html, "r", encoding="utf-8") as f:
+        with open(OUTPUT_INLINE_HTML, "r", encoding="utf-8") as f:
             soup = BeautifulSoup(f, "html.parser")
 
         
@@ -88,21 +86,21 @@ def generate_inline_citation_map(bib_file, output_json="src/reference/data/citat
     log.info(f" Saved {len(inline_map)} inline citation formats to {output_json}")
     return inline_map
 
-def citation_map(bib_file, output_json=citation_map_json):
+def citation_map(bib_file, output_json=CITATION_MAP_JSON):
     try:
         return generate_inline_citation_map(bib_file, output_json)
     except Exception as e:
         log.error(f"❌ Error: {e}")
         return {}
     finally:
-        if os.path.exists(output_inline_html):
-            os.remove(output_inline_html)
-            log.info(f"'{output_inline_html}' File deleted.")
+        if os.path.exists(OUTPUT_INLINE_HTML):
+            os.remove(OUTPUT_INLINE_HTML)
+            log.info(f"'{OUTPUT_INLINE_HTML}' File deleted.")
         else:
-            log.warning(f"'{output_inline_html}' File not found.")
+            log.warning(f"'{OUTPUT_INLINE_HTML}' File not found.")
 
-        if os.path.exists(dummy_md):
-            os.remove(dummy_md)
-            log.info(f"'{dummy_md}' File deleted.")
+        if os.path.exists(DUMMY_MD):
+            os.remove(DUMMY_MD)
+            log.info(f"'{DUMMY_MD}' File deleted.")
         else:
-            log.warning(f"'{dummy_md}' File not found.")
+            log.warning(f"'{DUMMY_MD}' File not found.")

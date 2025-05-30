@@ -1,5 +1,5 @@
-from config import COLAB_URL, OUTPUT_IMAGES_DIR, GENIE_OUTPUT_DIR
-import sys
+from config import COLAB_URL, OUTPUT_IMAGES_DIR, GENIE_OUTPUT_DIR,KNOWLEDGE_JSON,ORIGINAL_PDF,OUTPUT_BIB,OUTPUT_TEX,INTERM_OUTPUT_IMAGES
+GENIE_OUTPUT_ZIP = f"{GENIE_OUTPUT_DIR}/output.zip"
 import os
 import json
 import re
@@ -9,15 +9,14 @@ import shutil
 import zipfile
 import argparse
 from bs4 import BeautifulSoup
-from src.logger import Logger
-from parsers.anystyleRef import get_bib_file
-from parsers.render_bib_map import citation_map
-from parsers.citegenie import fuzzy_match_citations
-from utils.broken_char import generate_broken_combinations, replace_broken
-from parsers.header_parser import generate_header_and_references
+from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.parsers.anystyleRef import get_bib_file
+from latexgenie_parser.parsers.render_bib_map import citation_map
+from latexgenie_parser.parsers.citegenie import fuzzy_match_citations
+from latexgenie_parser.utils.broken_char import generate_broken_combinations, replace_broken
+from latexgenie_parser.parsers.header_parser import generate_header_and_references
 
 log = Logger.get_logger()
-GENIE_OUTPUT_ZIP = f"{GENIE_OUTPUT_DIR}/output.zip"
 broken_combinations = generate_broken_combinations()
 # --- HTML table to LaTeX conversion logic ---
 
@@ -458,12 +457,12 @@ def knowledge_extractor(args):
 
 def convert_pdf():
 
-    input_path = 'LaTeXGenie-Worker/data/input.pdf'
-    output_dir = 'LaTeXGenie-Worker/data/output'
+    input_path = 'data/input.pdf'
+    output_dir = 'data/output'
 
     os.system(f'rm -rf {output_dir}')
 
-    os.system(f'python LaTeXGenie-Worker/LaTeXGenie-Core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
+    os.system(f'python LaTeXGenie-Core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
 
 
     return True
@@ -483,18 +482,18 @@ def safe_remove_dir(path):
 
 def handler(args):
     # knowledge_extractor(args)
-    convert_pdf()
+    # convert_pdf()
 
     # open the required file
-    with open("LaTeXGenie-Worker/data/output/input/auto/input_content_list.json", "r", encoding="utf-8") as f:
+    with open(KNOWLEDGE_JSON, "r", encoding="utf-8") as f:
         miner_data = json.load(f)
 
     latex_output, title, _ = json_to_latex(miner_data, args.column)
 
     # generate header and references from the grobid
     # journal_type = "elsevier"
-    pdf_path = "LaTeXGenie-Worker/data/output/input/auto/input_origin.pdf"
-    header , references = generate_header_and_references(journal_type=args.journal,pdf_path=pdf_path, title=title)
+ 
+    header , references = generate_header_and_references(journal_type=args.journal,pdf_path=ORIGINAL_PDF, title=title)
     # header , references = generate_header_and_references(journal_type=args.journal,pdf_path=args.pdf,title=title)
     
     header = replace_broken(header, broken_combinations)
@@ -506,7 +505,7 @@ def handler(args):
     get_bib_file(references)
 
     # create mapping rendered : key
-    mapping = citation_map("output/references.bib")
+    mapping = citation_map(OUTPUT_BIB)
 
     # add citations
     latex_output,citation_style = fuzzy_match_citations(latex_output, mapping,total_ref, threshold=80) 
@@ -518,17 +517,17 @@ def handler(args):
     
 
     # write final latex output to file
-    with open("output/output.tex", "w", encoding="utf-8") as f:
+    with open(OUTPUT_TEX, "w", encoding="utf-8") as f:
         f.write(latex_output)
 
     # copy images to output folder
     safe_remove_dir(OUTPUT_IMAGES_DIR)
     os.makedirs(OUTPUT_IMAGES_DIR, exist_ok=True)
     
-    if os.path.exists('LaTeXGenie-Worker/data/output/input/auto/images'):
-        for file in os.listdir("LaTeXGenie-Worker/data/output/input/auto/images"):
+    if os.path.exists(INTERM_OUTPUT_IMAGES):
+        for file in os.listdir(INTERM_OUTPUT_IMAGES):
             if file.endswith(".png") or file.endswith(".jpg"):
-                src_path = os.path.join("LaTeXGenie-Worker/data/output/input/auto/images", file)
+                src_path = os.path.join(INTERM_OUTPUT_IMAGES, file)
                 dest_path = os.path.join(OUTPUT_IMAGES_DIR, file)
                 with open(src_path, "rb") as src_file:
                     with open(dest_path, "wb") as dest_file:

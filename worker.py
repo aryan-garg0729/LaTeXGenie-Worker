@@ -4,9 +4,9 @@ import dotenv
 import os
 from supabase import create_client, Client
 # Import pipeline and log setup
-from src.main import run_pipeline  
-from src.logger import Logger
-
+from latexgenie_parser.src.main import run_pipeline  
+from latexgenie_parser.src.logger import Logger
+from config import DATA_DIR
 dotenv.load_dotenv()
 
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
@@ -31,11 +31,11 @@ def process_job(job):
         file_data = supabase.storage.from_("latexgenie").download(pdf_path)
 
         # --- Step 2: Save the file locally ---
-        with open("LaTeXGenie-Worker/data/input.pdf", "wb") as f:
+        with open(f"{DATA_DIR}/input.pdf", "wb") as f:
             f.write(file_data)
 
         # --- Step 3: Process file ---
-        output = run_pipeline('../data/input.pdf', column, journal)
+        output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
 
         # --- Step 4: upload zip to bucket ---
         output_path = pdf_path.replace("pdfs/", "output/").replace(".pdf", ".zip")

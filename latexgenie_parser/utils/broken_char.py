@@ -1,7 +1,7 @@
 # Define diacritics and dotless/special base character cases
 import unicodedata
 import re
-from src.logger import Logger
+from latexgenie_parser.src.logger import Logger
 log = Logger.get_logger()
 
 # Common diacritical marks
