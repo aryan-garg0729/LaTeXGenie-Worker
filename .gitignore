@@ -13,7 +13,6 @@ envs/
 logs/
 output/
 unzipped_output/
-data/
 genie_output/
 *.zip
 *.tar

@@ -9,7 +9,8 @@ services:
 
 
   app:
-    build: .
+    # build: .
+    image: latexgenie-worker
     depends_on:
       - grobid
     environment:

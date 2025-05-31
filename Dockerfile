@@ -13,9 +13,6 @@ RUN apt-get update && \
 # Install AnyStyle CLI
 RUN gem install anystyle-cli && gem install anystyle
 
-# (Optional) Verify AnyStyle installation
-RUN anystyle --version
-
 # Set working directory
 WORKDIR /app
 
