@@ -30,6 +30,7 @@ def escape_latex(text):
     for key, value in replacements.items():
         text = text.replace(key, value)
     return text
+
 def extract_paper_metadata(xml_file_path):
     result = {
         'title': None,
@@ -159,6 +160,7 @@ def extract_paper_metadata(xml_file_path):
         print(f"[Author Block Extraction Error] {e}")
 
     return result
+
 def generate_elsevier_latex_header(metadata):
     latex_lines = []
     
@@ -417,7 +419,7 @@ def start_grobid_server():
 def wait_for_grobid_ready(timeout=20):
     for _ in range(timeout):
         try:
-            r = requests.get("http://localhost:8070")
+            r = requests.get("http://grobid:8070")
             if r.ok :
                 log.info("✅ GROBID is ready.")
                 return
@@ -548,14 +550,14 @@ def generate_header_and_references(journal_type, pdf_path, title):
     """
     try:
         # Step 1: spin up grobid container
-        start_grobid_server()
-        wait_for_grobid_ready(20)
+        # start_grobid_server()
+        wait_for_grobid_ready(60)
         # Step 2: Run curl to get structured XML from GROBID
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
         xml_output_path = XML_OUTPUT
         with open(xml_output_path, 'w') as output_file:
             subprocess.run(
-                ["curl", "-s", "--form", f"input=@{pdf_path}", "http://localhost:8070/api/processFulltextDocument"],
+                ["curl", "-s", "--form", f"input=@{pdf_path}", "http://grobid:8070/api/processFulltextDocument"],
                 check=True,
                 stdout=output_file
             )

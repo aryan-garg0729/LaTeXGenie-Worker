@@ -1,8 +1,9 @@
 import logging
+import os
 from pathlib import Path
 from config import BASE_DIR
 
-# 👇 Ensure logs directory exists BEFORE configuring logging
+# Ensure logs directory exists
 LOGS_DIR = Path(BASE_DIR) / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -17,26 +18,43 @@ class Logger:
         if Logger._instance is None:
             Logger._instance = logging.getLogger("root")
             Logger._instance.setLevel(logging.INFO)
-
-            # Remove existing handlers to prevent duplicates
             Logger._instance.handlers.clear()
 
-            # Create file and console handlers
             file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
             stream_handler = logging.StreamHandler()
 
-            # Updated log format with filename
-            log_format = "%(asctime)s | %(filename)-20s | %(levelname)-7s | %(message)s"
-            formatter = logging.Formatter(log_format)
+            # Get unique instance/container identifier
+            # instance_id = str(os.getpid())
 
+            instance_id = (
+                os.environ.get("HOSTNAME") or
+                os.environ.get("INSTANCE_ID") or
+                os.environ.get("CONTAINER_NAME") or
+                "unknown-instance"
+            )
+
+            # Enhanced log format: timestamp | instance | filename:line | level | message
+            log_format = (
+                "%(asctime)s | %(instance_id)-18s | %(filename)-20s:%(lineno)d | "
+                "%(levelname)-7s | %(message)s"
+            )
+
+            class ContextFilter(logging.Filter):
+                def filter(self, record):
+                    record.instance_id = instance_id
+                    return True
+
+            formatter = logging.Formatter(log_format)
             file_handler.setFormatter(formatter)
             stream_handler.setFormatter(formatter)
 
-            # Add handlers
+            # Add instance id filter
+            file_handler.addFilter(ContextFilter())
+            stream_handler.addFilter(ContextFilter())
+
             Logger._instance.addHandler(file_handler)
             Logger._instance.addHandler(stream_handler)
 
-            # Optional stage-based level
             if stage == "production":
                 Logger._instance.setLevel(logging.ERROR)
 

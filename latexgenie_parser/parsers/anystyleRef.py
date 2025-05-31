@@ -39,11 +39,15 @@ def format_references(input_text):
 
 def generate_bib(input_file, output_dir="output"):
     try:
+        # subprocess.run([
+        #     "docker", "run", "--rm", "-v", f"{os.getcwd()}:/data",
+        #     "cokoapps/anystyle:2.0.0",
+        #     "anystyle", "-f", "bib", "--overwrite", "parse",
+        #     f"/data/{input_file}", f"/data/{output_dir}/"
+        # ], check=True)
         subprocess.run([
-            "docker", "run", "--rm", "-v", f"{os.getcwd()}:/data",
-            "cokoapps/anystyle:2.0.0",
             "anystyle", "-f", "bib", "--overwrite", "parse",
-            f"/data/{input_file}", f"/data/{output_dir}/"
+            f"{input_file}", f"{output_dir}"
         ], check=True)
 
         log.info(f"✅ Bib file saved")

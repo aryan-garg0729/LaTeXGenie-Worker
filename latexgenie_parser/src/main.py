@@ -480,85 +480,122 @@ def safe_remove_dir(path):
     except Exception as e:
         return f"Error removing directory: {e}"
 
+
 def handler(args):
-    # knowledge_extractor(args)
-    # convert_pdf()
+    try:
+        # open the required file
+        try:
+            with open(KNOWLEDGE_JSON, "r", encoding="utf-8") as f:
+                miner_data = json.load(f)
+        except FileNotFoundError:
+            log.error(f"Knowledge JSON file not found: {KNOWLEDGE_JSON}")
+            return
+        except json.JSONDecodeError as e:
+            log.error(f"Error decoding JSON: {e}")
+            return
 
-    # open the required file
-    with open(KNOWLEDGE_JSON, "r", encoding="utf-8") as f:
-        miner_data = json.load(f)
+        try:
+            latex_output, title, _ = json_to_latex(miner_data, args.column)
+        except Exception as e:
+            log.error(f"Error in json_to_latex: {e}")
+            return
 
-    latex_output, title, _ = json_to_latex(miner_data, args.column)
+        try:
+            header, references = generate_header_and_references(
+                journal_type=args.journal,
+                pdf_path=ORIGINAL_PDF,
+                title=title
+            )
+        except Exception as e:
+            log.error(f"Error in generate_header_and_references: {e}")
+            return
 
-    # generate header and references from the grobid
-    # journal_type = "elsevier"
- 
-    header , references = generate_header_and_references(journal_type=args.journal,pdf_path=ORIGINAL_PDF, title=title)
-    # header , references = generate_header_and_references(journal_type=args.journal,pdf_path=args.pdf,title=title)
-    
-    header = replace_broken(header, broken_combinations)
+        try:
+            header = replace_broken(header, broken_combinations)
+            total_ref = len(references)
+            references = "\n".join(references)
+            references = replace_broken(references, broken_combinations)
+            get_bib_file(references)
+        except Exception as e:
+            log.error(f"Error processing references: {e}")
+            return
 
-    #generate Bib file 
-    total_ref = len(references)
-    references = "\n".join(references)
-    references = replace_broken(references, broken_combinations)
-    get_bib_file(references)
+        try:
+            mapping = citation_map(OUTPUT_BIB)
+            latex_output, citation_style = fuzzy_match_citations(
+                latex_output, mapping, total_ref, threshold=80
+            )
+            latex_imports = generate_imports(args.journal, args.column, citation_style=citation_style)
+            latex_imports.append(header)
+            latex_output = "\n".join(latex_imports) + "\n\n" + latex_output
+        except Exception as e:
+            log.error(f"Error in citation processing: {e}")
+            return
 
-    # create mapping rendered : key
-    mapping = citation_map(OUTPUT_BIB)
+        try:
+            with open(OUTPUT_TEX, "w", encoding="utf-8") as f:
+                f.write(latex_output)
+        except Exception as e:
+            log.error(f"Error writing LaTeX output: {e}")
+            return
 
-    # add citations
-    latex_output,citation_style = fuzzy_match_citations(latex_output, mapping,total_ref, threshold=80) 
+        # Copy images to output folder
+        try:
+            safe_remove_dir(OUTPUT_IMAGES_DIR)
+            os.makedirs(OUTPUT_IMAGES_DIR, exist_ok=True)
+            if os.path.exists(INTERM_OUTPUT_IMAGES):
+                for file in os.listdir(INTERM_OUTPUT_IMAGES):
+                    if file.endswith(".png") or file.endswith(".jpg"):
+                        src_path = os.path.join(INTERM_OUTPUT_IMAGES, file)
+                        dest_path = os.path.join(OUTPUT_IMAGES_DIR, file)
+                        with open(src_path, "rb") as src_file:
+                            with open(dest_path, "wb") as dest_file:
+                                dest_file.write(src_file.read())
+        except Exception as e:
+            log.error(f"Error copying images: {e}")
+            return
 
-    # generate final latex
-    latex_imports = generate_imports(args.journal, args.column,citation_style = citation_style)
-    latex_imports.append(header)
-    latex_output = "\n".join(latex_imports) + "\n\n" + latex_output
-    
+        # Zip the output folder
+        try:
+            safe_remove_dir(GENIE_OUTPUT_DIR)
+            os.makedirs(GENIE_OUTPUT_DIR, exist_ok=True)
+            with zipfile.ZipFile(GENIE_OUTPUT_ZIP, "w") as zipf:
+                for root, dirs, files in os.walk("output"):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        zipf.write(file_path, os.path.relpath(file_path, "output"))
+        except Exception as e:
+            log.error(f"Error zipping output: {e}")
+            return
 
-    # write final latex output to file
-    with open(OUTPUT_TEX, "w", encoding="utf-8") as f:
-        f.write(latex_output)
-
-    # copy images to output folder
-    safe_remove_dir(OUTPUT_IMAGES_DIR)
-    os.makedirs(OUTPUT_IMAGES_DIR, exist_ok=True)
-    
-    if os.path.exists(INTERM_OUTPUT_IMAGES):
-        for file in os.listdir(INTERM_OUTPUT_IMAGES):
-            if file.endswith(".png") or file.endswith(".jpg"):
-                src_path = os.path.join(INTERM_OUTPUT_IMAGES, file)
-                dest_path = os.path.join(OUTPUT_IMAGES_DIR, file)
-                with open(src_path, "rb") as src_file:
-                    with open(dest_path, "wb") as dest_file:
-                        dest_file.write(src_file.read())
-    
-    # zip the output folder
-
-    safe_remove_dir(GENIE_OUTPUT_DIR)
-    os.makedirs(GENIE_OUTPUT_DIR, exist_ok=True)
-    with zipfile.ZipFile(GENIE_OUTPUT_ZIP, "w") as zipf:
-        for root, dirs, files in os.walk("output"):
-            for file in files:
-                file_path = os.path.join(root, file)
-                zipf.write(file_path, os.path.relpath(file_path, "output"))
+    except Exception as e:
+        log.error(f"Unexpected error in handler: {e}")
 
 
 def run_pipeline(pdf_path: str, column: str = "one", journal: str = "elsevier"):
     VALID_COLUMNS = {"one", "two"}
     VALID_JOURNALS = {"elsevier", "ieee", "ieee_thanks_journal"}
 
-    if column not in VALID_COLUMNS:
-        raise ValueError(f"Invalid column: {column}")
-    if journal not in VALID_JOURNALS:
-        raise ValueError(f"Invalid journal: {journal}")
+    try:
+        if column not in VALID_COLUMNS:
+            raise ValueError(f"Invalid column: {column}")
+        if journal not in VALID_JOURNALS:
+            raise ValueError(f"Invalid journal: {journal}")
 
-    args = argparse.Namespace(pdf_path=pdf_path, column=column, journal=journal)
+        args = argparse.Namespace(pdf_path=pdf_path, column=column, journal=journal)
 
-    log.info(r"%%%% Starting JSON to LaTeX conversion... %%%%")
-    handler(args)
-    log.info(r"%%%% LaTeX file generated: output.tex %%%%")
-    return GENIE_OUTPUT_ZIP
+        log.info(r"%%%% Starting JSON to LaTeX conversion... %%%%")
+        handler(args)
+        log.info(r"%%%% LaTeX file generated: output.tex %%%%")
+        return GENIE_OUTPUT_ZIP
+
+    except ValueError as ve:
+        log.error(f"ValueError: {ve}")
+        raise
+    except Exception as e:
+        log.error(f"Unexpected error in run_pipeline: {e}")
+        raise
+
 
 # run_pipeline("input.pdf")
 

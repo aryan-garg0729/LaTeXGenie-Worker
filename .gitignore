@@ -13,6 +13,8 @@ envs/
 logs/
 output/
 unzipped_output/
+data/
+genie_output/
 *.zip
 *.tar
 *.tar.gz
@@ -55,3 +57,5 @@ app/tests/*
 /app/common/__init__.py
 /magic_pdf/config/__init__.py
 /zpiyush_tests/
+*.module.css
+*.module.css.map

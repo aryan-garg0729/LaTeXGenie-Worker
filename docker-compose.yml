@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  grobid:
+    image: lfoppiano/grobid:latest-crf
+    restart: unless-stopped
+
+
+  app:
+    build: .
+    depends_on:
+      - grobid
+    environment:
+      - CONTAINER_NAME=worker
+      - INSTANCE_ID=1
+    volumes:
+      - ./logs:/logs
+
