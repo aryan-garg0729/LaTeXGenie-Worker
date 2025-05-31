@@ -462,7 +462,7 @@ def convert_pdf():
 
     os.system(f'rm -rf {output_dir}')
 
-    os.system(f'python LaTeXGenie-Core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
+    os.system(f'python latexgenie_core/magic_pdf/tools/cli.py -p {input_path} -o {output_dir}')
 
 
     return True

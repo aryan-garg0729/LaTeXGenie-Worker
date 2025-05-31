@@ -30,6 +30,7 @@ class Logger:
                 os.environ.get("HOSTNAME") or
                 os.environ.get("INSTANCE_ID") or
                 os.environ.get("CONTAINER_NAME") or
+                str(os.getpid()) or
                 "unknown-instance"
             )
 

@@ -1,14 +1,13 @@
-FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
+FROM python:3.12-slim
 
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        poppler-utils \
-        ruby-full \
-        build-essential \
-        curl \
-        pandoc \
-        git \
+    poppler-utils \
+    ruby-full \
+    build-essential \
+    curl \
+    pandoc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install AnyStyle CLI
@@ -20,14 +19,14 @@ RUN anystyle --version
 # Set working directory
 WORKDIR /app
 
-# Copy only LaTeXGenie-Core first to leverage caching
-COPY LaTeXGenie-Core/ LaTeXGenie-Core/
+# Copy only latexgenie_core first to leverage caching
+COPY latexgenie_core/ latexgenie_core/
 
-# Install dependencies from LaTeXGenie-Core
-RUN pip install --no-cache-dir ./LaTeXGenie-Core[full]
+# Install dependencies from latexgenie_core
+RUN pip install --no-cache-dir ./latexgenie_core[full]
 
 # Run model downloader early (cached if models don’t change)
-RUN python LaTeXGenie-Core/scripts/download_models_hf.py
+RUN python latexgenie_core/scripts/download_models_hf.py
 
 # Copy latexgenie_parser requirements and install separately
 COPY latexgenie_parser/requirements.txt latexgenie_parser/

@@ -4,6 +4,8 @@ services:
   grobid:
     image: lfoppiano/grobid:latest-crf
     restart: unless-stopped
+    environment:
+      - CONTAINER_NAME=grobid
 
 
   app:
