@@ -42,7 +42,7 @@
 
 
 
-FROM python:3.12-ubuntu22.04
+FROM python:3.12-slim
 
 # Prevents Python from writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
