@@ -70,6 +70,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN mkdir -p /root/.config/Ultralytics && chmod -R 777 /root/.config
+
 # Install AnyStyle CLI
 RUN gem install --no-document anystyle-cli anystyle
 
@@ -91,11 +93,6 @@ RUN pip install --no-cache-dir -r latexgenie_parser/requirements.txt
 
 # Now copy the full app
 COPY . .
-
-# Final cleanup to reduce image size
-RUN apt-get purge -y build-essential ruby-full && \
-    apt-get autoremove -y && \
-    rm -rf ~/.cache/pip ~/.gem /root/.cache
 
 # Default command
 CMD ["python", "run.py"]
