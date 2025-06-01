@@ -42,7 +42,7 @@
 
 
 
-FROM python:3.12-bookworm
+FROM python:3.12-ubuntu22.04
 
 # Prevents Python from writing .pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -65,7 +65,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-cjk \
     fonts-wqy-zenhei \
     fonts-wqy-microhei \
-    ttf-mscorefonts-installer \
+    # ttf-mscorefonts-installer \
     libreoffice \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
