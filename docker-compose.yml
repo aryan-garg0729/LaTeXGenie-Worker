@@ -9,7 +9,9 @@ services:
 
 
   app:
-    # build: .
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.cpu
     image: latexgenie/latexgenie-worker
     depends_on:
       - grobid
@@ -22,3 +24,26 @@ services:
     volumes:
       - ./logs:/logs
 
+  # app:
+  #   # build:
+  #   #   context: .
+  #   #   dockerfile: Dockerfile.gpu
+  #   image: latexgenie/latexgenie-worker:gpu
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
+  #   depends_on:
+  #     - grobid
+  #   environment:
+  #     - CONTAINER_NAME=worker
+  #     - INSTANCE_ID=1
+  #     - REDIS_URL
+  #     - SUPABASE_URL
+  #     - SUPABASE_SERVICE_ROLE_KEY
+  #     - NVIDIA_VISIBLE_DEVICES=all
+  #   volumes:
+  #     - ./logs:/logs

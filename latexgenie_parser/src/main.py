@@ -8,6 +8,7 @@ import requests
 import shutil
 import zipfile
 import argparse
+import google.generativeai as genai
 from bs4 import BeautifulSoup
 from latexgenie_parser.src.logger import Logger
 from latexgenie_parser.parsers.anystyleRef import get_bib_file
@@ -19,6 +20,80 @@ from latexgenie_parser.parsers.header_parser import generate_header_and_referenc
 log = Logger.get_logger()
 broken_combinations = generate_broken_combinations()
 # --- HTML table to LaTeX conversion logic ---
+
+def llm_aided_latex(text):
+    print("llm called")
+    # === CONFIGURATION ===
+    API_KEY = "AIzaSyDXiX89zV3uMBz5LSfcYzYIy8zaftsFq5Q"  # Replace with your API key
+
+    # === SETUP ===
+    genai.configure(api_key=API_KEY)
+
+    # Use Gemini Pro (for text-based tasks)
+    model = genai.GenerativeModel('gemma-3-27b-it',generation_config={
+            "temperature": 0.7,
+    })
+    
+    prompt = f"""You are a text analysis expert trained to structure scientific and technical content for LaTeX documents.
+
+    Given an input chunk of text from a research paper or technical document, identify and wrap the relevant parts using **appropriate LaTeX environments**:
+
+    - Use `\\begin{{itemize}}...\\end{{itemize}}` for **list items** (bulleted or numbered steps, \\item).
+    - Use `\\begin{{algorithm}}[H]...\\end{{algorithm}}` with `\\begin{{algorithmic}}` inside for **algorithmic pseudocode**.
+    - Use `\\begin{{lstlisting}}...\\end{{lstlisting}}` for **source code** blocks (Python, C++, LaTeX, etc.).
+    - Leave all **plain explanatory text** as-is.
+    - Maintain correct LaTeX syntax and indentation.
+    - Do not hallucinate structure — only wrap what is clearly list/code/algorithm.
+
+
+    Example Input:
+    To compute the factorial of a number n:
+    If n is 0, return 1.
+    Otherwise, return n * factorial(n - 1).
+
+    This is an example of a recursive algorithm. Below is a Python implementation:
+    def factorial(n):
+    if n == 0:
+    return 1
+    else:
+    return n * factorial(n - 1)
+
+    Example Output:
+    To compute the factorial of a number \\( n \\):
+
+    \\begin{{itemize}}
+    \\item If \\( n = 0 \\), return 1.
+    \\item Otherwise, return \\( n \\times \\text{{factorial}}(n - 1) \\).
+    \\end{{itemize}}
+
+    This is an example of a recursive algorithm.
+
+    \\begin{{algorithm}}[H]
+    \\caption{{Recursive Factorial}}
+    \\begin{{algorithmic}}
+    \\IF{{$n = 0$}}
+    \\STATE return 1
+    \\ELSE
+    \\STATE return $n \\times \\text{{factorial}}(n - 1)$
+    \\ENDIF
+    \\end{{algorithmic}}
+    \\end{{algorithm}}
+
+    \\begin{{lstlisting}}[language=Python]
+    def factorial(n):
+        if n == 0:
+            return 1
+        else:
+            return n * factorial(n - 1)
+    \\end{{lstlisting}}
+
+    Now process the following input in the same way:
+    {text}
+
+    Latex output:
+    """
+    response = model.generate_content(prompt)
+    return response.text
 
 def html_table_to_2d_array(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -272,9 +347,10 @@ def json_to_latex(data,column):
         obj = data[i]
         obj_type = obj.get("type")
         text = obj.get("text", "").strip() if obj_type == "text" else ""
-
         text = replace_broken(text, broken_combinations) if obj_type=="text" else text
-        
+        # if obj_type=="text":
+        #     text = llm_aided_latex(text)
+
         level = obj.get("text_level", None)
 
         if obj_type == "text" and level == 1 and not title_set:
@@ -482,7 +558,7 @@ def safe_remove_dir(path):
 
 
 def handler(args):
-    convert_pdf()
+    # convert_pdf()
     try:
         # open the required file
         try:
