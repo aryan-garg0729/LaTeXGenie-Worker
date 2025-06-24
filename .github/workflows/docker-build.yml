@@ -19,11 +19,16 @@ jobs:
       - name: Build CPU Docker image
         run: docker build -f Dockerfile.cpu -t latexgenie/latexgenie-worker:cpu .
 
+      - name: Push CPU image to Docker Hub
+        run: docker push latexgenie/latexgenie-worker:cpu
+
+      - name: Remove CPU image to free up space
+        run: |
+          docker rmi latexgenie/latexgenie-worker:cpu || true
+          docker system prune -f
+        
       - name: Build GPU Docker image
         run: docker build -f Dockerfile.gpu -t latexgenie/latexgenie-worker:gpu .
 
-      - name: Push CPU image to Docker Hub
-        run: docker push latexgenie/latexgenie-worker:cpu
-      
       - name: Push GPU image to Docker Hub
         run: docker push latexgenie/latexgenie-worker:gpu
