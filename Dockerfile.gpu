@@ -20,7 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     ruby-full \
     curl \
-    pandoc \
     poppler-utils \
     fontconfig \
     fonts-noto-cjk \
@@ -29,6 +28,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# -------------------------
+# Install latest Pandoc (for --citeproc support)
+# -------------------------
+RUN curl -L https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-1-amd64.deb -o pandoc.deb && \
+    dpkg -i pandoc.deb && rm pandoc.deb && pandoc --version
 
 # -------------------------
 #  Make Ultralytics config writable
