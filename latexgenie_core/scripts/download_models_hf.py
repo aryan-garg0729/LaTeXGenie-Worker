@@ -65,7 +65,7 @@ if __name__ == '__main__':
                 "enable":True
             }
         },
-        "device-mode": "cpu"
+        "device-mode": "cuda"
     }
 
     download_and_modify_json(json_path, config_file, json_mods)

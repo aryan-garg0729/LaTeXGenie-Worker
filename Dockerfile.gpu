@@ -2,14 +2,14 @@
 FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 
 # -------------------------
-# 1. Environment setup
+#  Environment setup
 # -------------------------
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 # -------------------------
-# 2. Install system dependencies
+#  Install system dependencies
 # -------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -31,44 +31,49 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # -------------------------
-# 3. Make Ultralytics config writable
+#  Make Ultralytics config writable
 # -------------------------
 RUN mkdir -p /root/.config/Ultralytics && chmod -R 777 /root/.config
 
 # -------------------------
-# 4. Install AnyStyle CLI
+#  Install AnyStyle CLI
 # -------------------------
 RUN gem install --no-document anystyle-cli anystyle
 
 # -------------------------
-# 5. Set working directory
+#  Set working directory
 # -------------------------
 WORKDIR /app
-RUN pip install --no-cache-dir torchvision==0.22.0
+
 # -------------------------
-# 6. Install latexgenie_core
+#  Install torchvision0.22.0
+# -------------------------
+RUN pip install --no-cache-dir torchvision==0.22.0
+
+# -------------------------
+#  Install latexgenie_core
 # -------------------------
 COPY latexgenie_core/ ./latexgenie_core/
 RUN pip install --no-cache-dir ./latexgenie_core[full]
 
 # -------------------------
-# 7. Download HF models early
+#  Download HF models early
 # -------------------------
 RUN pip install requests
 RUN python ./latexgenie_core/scripts/download_models_hf.py
 
 # -------------------------
-# 8. Install latexgenie_parser requirements
+#  Install latexgenie_parser requirements
 # -------------------------
 COPY latexgenie_parser/requirements.txt ./latexgenie_parser/
 RUN pip install --no-cache-dir -r ./latexgenie_parser/requirements.txt
 
 # -------------------------
-# 9. Copy full app
+#  Copy full app
 # -------------------------
 COPY . .
 
 # -------------------------
-# 10. Default command
+#  Default command
 # -------------------------
 CMD ["python", "run.py"]

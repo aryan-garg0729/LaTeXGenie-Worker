@@ -558,7 +558,7 @@ def safe_remove_dir(path):
 
 
 def handler(args):
-    # convert_pdf()
+    convert_pdf()
     try:
         # open the required file
         try:
