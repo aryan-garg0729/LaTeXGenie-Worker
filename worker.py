@@ -5,6 +5,7 @@ import os
 from supabase import create_client, Client
 # Import pipeline and log setup
 from latexgenie_parser.src.main import run_pipeline  
+from latexgenie_parser.src.general import run_pipeline as general_pipeline  
 from latexgenie_parser.src.logger import Logger
 from config import DATA_DIR
 dotenv.load_dotenv()
@@ -24,6 +25,7 @@ def process_job(job):
         pdf_path = job["filePath"]  # e.g., "pdfs/user-1234-file.pdf"
         column = job.get("column", "one")
         journal = job.get("journal", "elsevier")
+        general = job.get("general",False)
 
         log.info(f"Running pipeline for job_id: {job['job_id']}")
 
@@ -35,7 +37,10 @@ def process_job(job):
             f.write(file_data)
 
         # --- Step 3: Process file ---
-        output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+        if not general:
+            output = general_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+        else:
+            output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
 
         # --- Step 4: upload zip to bucket ---
         output_path = pdf_path.replace("pdfs/", "output/").replace(".pdf", ".zip")

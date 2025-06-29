@@ -13,6 +13,8 @@ DATA_DIR = Path(BASE_DIR) / "data"
 
 #URLS
 CONTAINER_NAME = "grobid-server"
+# GROBID_BASE_URL="http://localhost:8070"
+GROBID_BASE_URL="http://grobid:8070"
 COLAB_URL = 'https://b8d7-34-34-95-167.ngrok-free.app'
 
 #FILES

@@ -9,7 +9,7 @@ import time
 import shutil
 import json
 from latexgenie_parser.src.logger import Logger
-from config import XML_OUTPUT, CONTAINER_NAME
+from config import XML_OUTPUT, CONTAINER_NAME, GROBID_BASE_URL
 log = Logger.get_logger()
 
 
@@ -419,7 +419,7 @@ def start_grobid_server():
 def wait_for_grobid_ready(timeout=20):
     for _ in range(timeout):
         try:
-            r = requests.get("http://grobid:8070")
+            r = requests.get(GROBID_BASE_URL)
             if r.ok :
                 log.info("✅ GROBID is ready.")
                 return
@@ -540,7 +540,7 @@ def extract_references(xml_file_path):
     return references
 
 
-def generate_header_and_references(journal_type, pdf_path, title):
+def generate_header_and_references(journal_type, pdf_path, title,only_ref = False):
     """
     Generates LaTeX header from a PDF using GROBID and journal type.
     
@@ -557,7 +557,7 @@ def generate_header_and_references(journal_type, pdf_path, title):
         xml_output_path = XML_OUTPUT
         with open(xml_output_path, 'w') as output_file:
             subprocess.run(
-                ["curl", "-s", "--form", f"input=@{pdf_path}", "http://grobid:8070/api/processFulltextDocument"],
+                ["curl", "-s", "--form", f"input=@{pdf_path}", f"{GROBID_BASE_URL}/api/processFulltextDocument"],
                 check=True,
                 stdout=output_file
             )
@@ -572,6 +572,9 @@ def generate_header_and_references(journal_type, pdf_path, title):
      
         # 2. Generate LaTeX header
         header = ""
+        if only_ref:
+            return "", references
+        
         if journal_type == 'elsevier':
             header = generate_elsevier_latex_header(metadata)
         elif journal_type == 'ieee':
