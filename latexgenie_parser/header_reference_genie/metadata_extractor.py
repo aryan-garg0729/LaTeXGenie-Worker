@@ -855,8 +855,8 @@ def generate_header_and_references(journal_type, pdf_path):
         reference_extractor = ReferenceExtractor()
         
         # Step 1: spin up grobid container
-        grobid_manager.start_grobid_server()
-        grobid_manager.wait_for_grobid_ready(60)
+        # grobid_manager.start_grobid_server()
+        # grobid_manager.wait_for_grobid_ready(60)
         
         # Step 2: Run curl to get structured XML from GROBID
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
@@ -929,8 +929,8 @@ def get_header_text(pdf_path):
         metadata_extractor = PaperMetadataExtractor()
         
         # Step 1: spin up grobid container
-        grobid_manager.start_grobid_server()
-        grobid_manager.wait_for_grobid_ready(60)
+        # grobid_manager.start_grobid_server()
+        # grobid_manager.wait_for_grobid_ready(60)
         
         # Step 2: Run curl to get structured XML from GROBID
         xml_output_path = XML_OUTPUT
@@ -972,8 +972,8 @@ def get_reference_list(pdf_path):
         reference_extractor = ReferenceExtractor()
         
         # Step 1: spin up grobid container
-        grobid_manager.start_grobid_server()
-        grobid_manager.wait_for_grobid_ready(60)
+        # grobid_manager.start_grobid_server()
+        # grobid_manager.wait_for_grobid_ready(60)
         
         # Step 2: Run curl to get structured XML from GROBID
         xml_output_path = XML_OUTPUT
@@ -1020,8 +1020,8 @@ def get_header_text_reference_list(pdf_path):
         reference_extractor = ReferenceExtractor()
         
         # Step 1: spin up grobid container
-        grobid_manager.start_grobid_server()
-        grobid_manager.wait_for_grobid_ready(60)
+        # grobid_manager.start_grobid_server()
+        # grobid_manager.wait_for_grobid_ready(60)
         
         # Step 2: Run curl to get structured XML from GROBID
         xml_output_path = XML_OUTPUT
