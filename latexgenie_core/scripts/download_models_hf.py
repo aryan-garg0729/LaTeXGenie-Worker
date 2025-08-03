@@ -41,13 +41,13 @@ if __name__ == '__main__':
         "models/MFR/unimernet_hf_small_2503/*",
         "models/OCR/paddleocr_torch/*",
     ]
-    model_dir = snapshot_download('piyush070920/genie-core', allow_patterns=mineru_patterns,token="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")
+    model_dir = snapshot_download('latexgenie/genie_core', allow_patterns=mineru_patterns,token="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")
 
     layoutreader_pattern = [
         "*.json",
         "*.safetensors",
     ]
-    layoutreader_model_dir = snapshot_download('hantian/layoutreader', allow_patterns=layoutreader_pattern)
+    layoutreader_model_dir = snapshot_download('latexgenie/layoutreader', allow_patterns=layoutreader_pattern,token="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")
 
     model_dir = model_dir + '/models'
     print(f'model_dir is: {model_dir}')
