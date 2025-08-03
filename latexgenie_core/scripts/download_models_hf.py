@@ -37,7 +37,7 @@ if __name__ == '__main__':
         "models/MFR/unimernet_hf_small_2503/*",
         "models/OCR/paddleocr_torch/*",
     ]
-    model_dir = snapshot_download('opendatalab/PDF-Extract-Kit-1.0', allow_patterns=mineru_patterns)
+    model_dir = snapshot_download('piyush070920/genie-core', allow_patterns=mineru_patterns,token="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")
 
     layoutreader_pattern = [
         "*.json",

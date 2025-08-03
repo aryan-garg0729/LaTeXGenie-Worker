@@ -5,8 +5,8 @@ import os
 from supabase import create_client, Client
 # Import pipeline and log setup
 from latexgenie_parser.src.main import run_pipeline  
-from latexgenie_parser.src.general import run_pipeline as general_pipeline  
-from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.src.old.general import run_pipeline as general_pipeline  
+from latexgenie_parser.utils.logger import Logger
 from config import DATA_DIR
 dotenv.load_dotenv()
 

@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
+tempCodeRunnerFile.py
 
 # === Virtual Environments ===
 venv/
@@ -14,6 +15,10 @@ logs/
 output/
 unzipped_output/
 genie_output/
+input/
+parsers/data
+
+# === Archives and Documents ===
 *.zip
 *.tar
 *.tar.gz
@@ -35,7 +40,6 @@ data-preparation1
 .vscode/
 .idea/
 .history
-tempCodeRunnerFile.py
 
 # === Node / Web Projects ===
 projects/web/node_modules/

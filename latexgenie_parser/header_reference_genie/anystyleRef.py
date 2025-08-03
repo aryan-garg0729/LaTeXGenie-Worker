@@ -2,7 +2,7 @@ import subprocess
 import os
 import re
 from config import REFERENCES_TXT
-from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.utils.logger import Logger
 
 log = Logger.get_logger()
 

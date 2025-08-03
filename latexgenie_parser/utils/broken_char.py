@@ -1,7 +1,7 @@
 # Define diacritics and dotless/special base character cases
 import unicodedata
 import re
-from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.utils.logger import Logger
 log = Logger.get_logger()
 
 # Common diacritical marks
@@ -127,3 +127,4 @@ def replace_broken(text, diacritics_map):
     return ''.join(processed_segments)
 
 
+BROKEN_COMBINATIONS = generate_broken_combinations()

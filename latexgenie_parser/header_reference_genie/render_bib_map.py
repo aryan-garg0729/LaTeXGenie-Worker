@@ -3,7 +3,7 @@ import subprocess
 import json
 import os
 from bs4 import BeautifulSoup
-from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.utils.logger import Logger
 from config import DUMMY_MD,CITATION_MAP_JSON,OUTPUT_INLINE_HTML,CSL_DIR
 log = Logger.get_logger()
 

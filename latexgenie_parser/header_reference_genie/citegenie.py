@@ -1,6 +1,6 @@
 import re
 from rapidfuzz import process, fuzz
-from latexgenie_parser.src.logger import Logger
+from latexgenie_parser.utils.logger import Logger
 log = Logger.get_logger()
 
 def normalize(text):
@@ -12,22 +12,6 @@ def normalize(text):
     text = text.replace(r'&', 'and')
     text = re.sub(r'\s+', ' ', text)
     return text.strip().lower()
-
-# thinking to use custom scorer for combined score
-def combined_score(candidate, reference):
-    fuzzy_score = fuzz.ratio(candidate, reference)
-    
-    candidate_words = set(candidate.lower().split())
-    reference_words = set(reference.lower().split())
-    exact_matches = candidate_words & reference_words
-    
-    if candidate_words:
-        exact_score = (len(exact_matches) / len(candidate_words)) * 10
-    else:
-        exact_score = 0
-
-    return (0.9 * fuzzy_score) + exact_score
-
 
 def expand_year_variants(part):
     part = part.strip()
