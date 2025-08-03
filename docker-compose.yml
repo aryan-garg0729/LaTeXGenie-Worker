@@ -21,7 +21,6 @@ services:
       - REDIS_URL
       - SUPABASE_URL
       - SUPABASE_SERVICE_ROLE_KEY
-      - DEVICE=cpu
     volumes:
       - ./logs:/logs
 
@@ -44,7 +43,6 @@ services:
   #     - INSTANCE_ID=1
   #     - REDIS_URL
   #     - SUPABASE_URL
-  #     - DEVICE=gpu
   #     - SUPABASE_SERVICE_ROLE_KEY
   #     - NVIDIA_VISIBLE_DEVICES=all
   #   volumes:
