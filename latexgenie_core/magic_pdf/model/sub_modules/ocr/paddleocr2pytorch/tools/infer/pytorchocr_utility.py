@@ -4,10 +4,14 @@ from pathlib import Path
 import numpy as np
 import cv2
 import argparse
+from dotenv import load_dotenv
 
 
 root_dir = Path(__file__).resolve().parent.parent.parent
 DEFAULT_CFG_PATH = root_dir / "pytorchocr" / "utils" / "resources" / "arch_config.yaml"
+load_dotenv()
+
+device = os.getenv('DEVICE', 'cpu').lower()
 
 
 def init_args():
@@ -16,10 +20,13 @@ def init_args():
 
     parser = argparse.ArgumentParser()
     # params for prediction engine
-    parser.add_argument("--device", type=str, default='cuda')
-    parser.add_argument("--use_gpu", type=str2bool, default=True)
-    # parser.add_argument("--device", type=str, default='cpu')
-    # parser.add_argument("--use_gpu", type=str2bool, default=False)
+    
+    if device=='gpu':
+        parser.add_argument("--device", type=str, default='cuda')
+        parser.add_argument("--use_gpu", type=str2bool, default=True)
+    else:
+        parser.add_argument("--device", type=str, default='cpu')
+        parser.add_argument("--use_gpu", type=str2bool, default=False)
 
     parser.add_argument("--det", type=str2bool, default=True)
     parser.add_argument("--rec", type=str2bool, default=True)
