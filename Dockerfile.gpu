@@ -70,8 +70,8 @@ RUN python ./latexgenie_core/scripts/download_models_hf.py
 # -------------------------
 #  Install latexgenie_parser requirements
 # -------------------------
-COPY latexgenie_parser/requirements.txt ./latexgenie_parser/
-RUN pip install --no-cache-dir -r ./latexgenie_parser/requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # -------------------------
 #  Copy full app

@@ -67,6 +67,7 @@ class LatexPipeline:
                 journal_type=self.args.journal,
                 pdf_path=ORIGINAL_PDF
             )
+            log.info(main_text_pointer)
             return replace_broken(header, BROKEN_COMBINATIONS), main_text_pointer
         except Exception as e:
             self.log.error(f"Error in generate_headers: {e}")

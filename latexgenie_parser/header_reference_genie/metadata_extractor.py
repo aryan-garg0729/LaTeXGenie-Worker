@@ -11,26 +11,8 @@ import json
 from latexgenie_parser.utils.logger import Logger
 from config import XML_OUTPUT, CONTAINER_NAME, GROBID_BASE_URL
 import re
+from utils.broken_char import escape_latex
 log = Logger.get_logger()
-
-
-def escape_latex(text):
-    replacements = {
-        '\\': r'\textbackslash{}',
-        '{': r'\{',
-        '}': r'\}',
-        '$': r'\$',
-        '&': r'\&',
-        '#': r'\#',
-        '%': r'\%',
-        '_': r'\_',
-        '~': r'\textasciitilde{}',
-        '^': r'\textasciicircum{}',
-    }
-
-    for key, value in replacements.items():
-        text = text.replace(key, value)
-    return text
 
 
 

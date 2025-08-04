@@ -2,29 +2,8 @@ import re
 import itertools
 from bs4 import BeautifulSoup
 from typing import List, Optional
+from utils.broken_char import escape_latex
 
-def escape_latex(text: str) -> str:
-    replacements = {
-        '\\': r'\textbackslash{}',
-        '{': r'\{',
-        '}': r'\}',
-        '$': r'\$',
-        '&': r'\&',
-        '#': r'\#',
-        '%': r'\%',
-        '_': r'\_',
-        '~': r'\textasciitilde{}',
-        '^': r'\textasciicircum{}',
-    }
-
-    def replacer(part: str) -> str:
-        if part.startswith('<!>') and part.endswith('<!>'):
-            return part  # preserve inline LaTeX
-        return ''.join(replacements.get(c, c) for c in part)
-
-    parts = re.split(r'(<!>.*?<!>)', text)
-    escaped = ''.join(replacer(part) for part in parts)
-    return escaped.replace('<!>', '$')
 
 def html_table_to_2d_array(html: str) -> List[List[Optional[str]]]:
     soup = BeautifulSoup(html, "html.parser")
