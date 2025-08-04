@@ -37,7 +37,7 @@ def process_job(job):
             f.write(file_data)
 
         # --- Step 3: Process file ---
-        if not general:
+        if general:
             output = general_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
         else:
             output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)

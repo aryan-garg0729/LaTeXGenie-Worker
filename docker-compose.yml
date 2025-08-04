@@ -21,8 +21,10 @@ services:
       - REDIS_URL
       - SUPABASE_URL
       - SUPABASE_SERVICE_ROLE_KEY
+      - GOOGLE_API_KEY
     volumes:
-      - ./logs:/logs
+      - ./internal/logs:/app/logs
+      - ./internal/data:/app/data
 
   # app:
   #   # build:
@@ -44,6 +46,8 @@ services:
   #     - REDIS_URL
   #     - SUPABASE_URL
   #     - SUPABASE_SERVICE_ROLE_KEY
+  #     - GOOGLE_API_KEY
   #     - NVIDIA_VISIBLE_DEVICES=all
-  #   volumes:
-  #     - ./logs:/logs
+    # volumes:
+    #   - ./logs:/app/logs
+    #   - ./data:/app/data
