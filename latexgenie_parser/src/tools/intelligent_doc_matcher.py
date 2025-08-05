@@ -40,83 +40,234 @@ class References(BaseModel):
 
 # -------------- prompts
 prompts = {
-    "header": """
-    ROLE:
-    You are an expert AI data extraction engine. Your specialty is processing fragmented document data and structuring it into a coherent format. You are precise, methodical, and strictly follow instructions.
+    "header":'''
+    ### **ROLE**
+You are a specialized AI data extraction engine. Your function is to meticulously parse fragmented document text and transform it into a structured, machine-readable format. You are precise, systematic, and follow instructions without deviation.
 
-    TASK:
-    You will be given a list of JSON objects, which represent sequential chunks of a document's text. Your task is to analyze these chunks from the beginning to identify and extract the core metadata of a scientific paper: title, {{authors, affiliations, email with direct index mapping}}, abstract, and keywords.
+### **OBJECTIVE**
+Your primary goal is to process a sequence of JSON objects, which represent the initial text chunks of a scientific paper. You will identify, extract, and assemble the core metadata: **title**, **authors** (including their affiliations and email), **abstract**, and **keywords**. You will then output this data in a strictly defined JSON format.
 
-    A single piece of information (like the title or a list of authors) may be fragmented across multiple consecutive JSON objects. You must intelligently identify all the chunks that constitute a single field and concatenate their text content.
+### **INPUT FORMAT**
+You will receive a JSON list of objects. Each object represents a sequential text chunk from the source document. The order of objects in the list corresponds to their order in the document.
+```json
+[
+  {{ "text": "Chunk 1 content..." }},
+  {{ "text": "Chunk 2 content..." }},
+  ...
+]
+```
 
-    You must process the objects sequentially starting from index 0. Once you have identified all the metadata and have reached the main body of the text (e.g., a section like "1. Introduction"), you should stop processing.
+### **OUTPUT SPECIFICATION**
+Your final output must be a single, valid JSON object containing two top-level keys: `extracted_data` and `main_content_pointer`.
 
-    Your final output must be a single JSON object containing two main keys:
 
-    extracted_data: An object containing the assembled metadata containing all data from used objects.
 
-    main_content_pointer: An integer representing the index of object from where main content starts or end of list (starting from 0).
+1.  `extracted_data`: An object containing the assembled metadata. If a specific field (like `keywords`) cannot be found, use `null` for singular fields (like `title`, `abstract`) or an empty list `[]` for list-based fields (`authors`, `keywords`).
+    *   `title`: (string) The full title of the paper.
+    *   `authors`: (list of objects) A list where each object represents one author.
+        *   `name`: (string) The full name of the author.
+        *   `affiliations`: (list of strings) A list of the author's affiliations.
+        *   `email`: (string or null) The author's email address, if present.
+    *   `abstract`: (string or null) The full text of the abstract.
+    *   `keywords`: (list of strings) A list of keywords or index terms.
 
-    RULES AND CONSTRAINTS:
+2.  `main_content_pointer`: (integer) — The 0-based index of the first chunk that marks the start of the main body of the document (typically the chunk containing "Introduction" or an equivalent heading).
 
-    NO HALLUCINATION: You must only use the text provided in the input JSON chunks. If a field (e.g., keywords) is not present, you must use null or an empty list ([]) for that key in your output. Do not invent any information.
+Do not skip the heading itself.
+For example, given the input:
+[
+  {{"text": "Header text"}},  
+  {{"text": "More header text"}},  
+  {{"text": "1. Introduction"}},  
+  {{"text": "This is the introduction."}}
+]
+The correct main_content_pointer is 2 — because the chunk "1. Introduction" is the first chunk not part of the metadata, and must be included in the main body.
 
-    NO TEXT ALTERATION: The text for each field must be an exact concatenation of the text from the source chunks. Do not paraphrase, summarize, correct, or change the text in any way.
+#### **Example Output Structure:**
+```json
+{{
+  "extracted_data": {{
+    "title": "A Study on Advanced Data Extraction Techniques",
+    "authors": [
+      {{
+        "name": "Jane Doe",
+        "affiliations": [
+          "AI Research Institute",
+          "University of Science"
+        ],
+        "email": "jane.doe@research.edu"
+      }},
+      {{
+        "name": "John Smith",
+        "affiliations": [
+          "AI Research Institute"
+        ],
+        "email": null
+      }}
+    ],
+    "abstract": "This paper details a novel methodology for extracting structured information from fragmented text sources. We present our system...",
+    "keywords": [
+      "data extraction",
+      "natural language processing",
+      "machine learning"
+    ]
+  }},
+  "main_content_pointer": 21
+}}
+```
 
-    USE ALL RELEVANT CHUNKS: You must process chunks from index 0 up to the point where the metadata ends. Do not skip any chunks in this range. The last_used_index must be the final index you drew information from.
+### **CORE LOGIC & HEURISTICS**
+You must process the input chunks sequentially, applying the following logic:
 
-    HANDLE FRAGMENTATION: Correctly identify and merge text from multiple consecutive objects to form complete fields. For example, if the title is split between objects at index 0 and 1, your title field should be the combined text of both.
+1.  **Sequential Analysis**: Start at index `0` and proceed in order. Do not skip chunks.
 
-    STRUCTURED OUTPUT: Your final output must be a single, valid JSON object following the specified format precisely.
-    sample:{{
-            "extracted_data": {{
-                "title": "Machine Learning Approaches for Natural Language Processing",
-                "authors": [
-                    {{
-                        "name": "John Smith",
-                        "affiliations": ["Department of Computer Science", "University of Technology"],
-                        "email": "john.smith@university.edu"
-                    }},
-                ],
-                "abstract": "This paper presents novel approaches to natural language processing using advanced machine learning techniques...",
-                "keywords": ["machine learning", "natural language processing"]
-            }},
-            "main_content_pointer": 15
-        }}
+2.  **Field Identification & Concatenation**: A single metadata field may be fragmented across multiple consecutive chunks. You must identify all relevant chunks and concatenate their `text` values.
+    *   **Title**: Typically the first significant block of text. It often has the largest font size (though font info is not provided, its position is the primary clue).
+    *   **Authors & Affiliations**:
+        *   Authors are usually listed directly after the title.
+        *   Look for common patterns to map authors to affiliations, such as superscript numbers (e.g., `Jane Doe¹`, `John Smith¹²`) or symbols (*, †).
+        *   The affiliations themselves are typically listed in a block below the authors, often prefixed by the corresponding superscripts or symbols. An author can be linked to multiple affiliations.
+        *   Emails are often found next to an author's name or within the affiliation text. Correctly associate each email with its author.
+    *   **Abstract**: This section is almost always explicitly marked with the heading "**Abstract**" or "**ABSTRACT**". The content is the text that follows this heading.
+    *   **Keywords**: This section is typically marked with a heading like "**Keywords**", "**Keywords:**", or "**Index Terms**". The content is the list of terms that follows.
 
-    {format_instructions}
+3.  **Stopping Condition**: You must stop processing and determine the `main_content_pointer` as soon as you encounter the first chunk that signals the start of the main document body. This is most commonly a heading like "**1. Introduction**", "**I. INTRODUCTION**", or a similar numbered/lettered section header. If no such header is present, it is the first paragraph of text that is clearly not metadata.
 
-    Now, process the following JSON chunks:
-    {text}
-    """,
+### **CONSTRAINTS**
+1.  **NO HALLUCINATION**: You must only use the text provided in the input JSON chunks. Do not infer, invent, or add any information that is not explicitly present.
+2.  **NO TEXT ALTERATION**: The text for each extracted field must be an exact concatenation of the source chunks. Do not paraphrase, summarize, correct, or modify the text in any way. Preserve all original formatting, including line breaks, within the concatenated string.
+3.  **STRICT JSON OUTPUT**: Your entire output must be a single, valid JSON object that strictly conforms to the `OUTPUT SPECIFICATION` provided above. No extra text or explanations.
+
+{format_instructions}
+
+**Now, process the following JSON chunks:**
+{text}
+    ''',
+    "header_1": """
+    ** ---------- Start from Scratch ----------- **
+You are an expert AI data extraction engine. Your task is to extract structured metadata from a list of sequential JSON text chunks representing the beginning of a scientific paper.
+
+** ---------- Use Only What Is Present. No Inference. No Hallucination. ----------- **
+
+Input Specification:
+You will receive an ordered list of JSON objects in the following format:
+
+{{
+  "type": "text",
+  "text": "..."
+}}
+These represent fragmented text chunks of a document, in order from index 0 onward.
+
+Step-by-step Instructions:
+- Sequential Processing: Start from index 1 and process the JSON objects in order.
+Continue until the beginning of the main body text is detected (e.g., a section heading such as "1. Introduction", "I. Introduction",etc or equivalent).
+
+Record the index of the first unused chunk as main_content_pointer.
+
+Extract the following fields:
+1. extracted_data:
+    title: The full paper title (may span multiple chunks).
+    authors: A list of author objects, each with:
+    - "name": Full name as appears in the text.
+    - "affiliations": List of affiliations (verbatim from text).
+    - "email": Email address if available. Null if not found.
+    abstract: Full abstract content, extracted from consecutive chunks, if present.
+    keywords: A list of keywords if found under a "Keywords","concepts" or similar section. Otherwise, return an empty list.
+
+main_content_pointer: (integer) — The 0-based index of the first chunk that marks the start of the main body of the document (typically the chunk containing "Introduction" or an equivalent heading).
+
+Do not skip the heading itself.
+For example, given the input:
+[
+  {{"text": "Header text"}},  
+  {{"text": "More header text"}},  
+  {{"text": "1. Introduction"}},  
+  {{"text": "This is the introduction."}}
+]
+The correct main_content_pointer is 2 — because the chunk "1. Introduction" is the first chunk not part of the metadata, and must be included in the main body.
+
+Field Assembly Rules:
+Handle fragmentation by intelligently concatenating adjacent chunks.
+Use only the raw text from the chunks; do not edit, infer, or fabricate any content.
+If a field (e.g., keywords) is not found, set it as null (or [] for lists).
+
+Output Format:
+Return a single JSON object with the structure:
+
+{{
+  "extracted_data": {{
+    "title": "Exact full title from text chunks",
+    "authors": [
+      {{
+        "name": "Author Name",
+        "affiliations": ["Affiliation 1", "Affiliation 2"],
+        "email": "email@domain.com"
+      }},
+      ...
+    ],
+    "abstract": "Full abstract text from chunks",
+    "keywords": ["keyword1", "keyword2"]
+  }},
+  "main_content_pointer": index_of_first_chunk_not_used_in_metadata
+}}
+
+{format_instructions}
+
+Begin processing now. Use the following list of JSON chunks as input:
+{text}
+
+ """,
+
+
     "reference":"""
-    ROLE:
-    You are an expert AI data extraction engine. Your specialty is processing fragmented document data and structuring it into a coherent format. You are precise, methodical, and strictly follow instructions.
+    You are a specialized AI data extraction engine. Your expertise lies in processing raw, and often fragmented, text from scientific documents to reconstruct structured bibliographic information with uncompromising precision.
 
-    TASK:
-    You will be given a list of JSON objects, which represent sequential chunks of a document's text. Your task is to analyze these chunks from the beginning to identify and extract the references and biblographic text of a scientific paper.
+Objective
+Your primary task is to deconstruct a block of text from a scientific document's reference section into a list of individual, complete bibliographic entries.
 
-    A single reference may be fragmented across multiple consecutive JSON objects. You must intelligently identify all the chunks that constitute a single field and concatenate their text content.
+Key Challenge: Reference Delimitation
+The most critical part of your task is to correctly identify the boundary between one reference and the next, as this is a common point of failure. A single reference entry can span multiple lines. Do not merge distinct references.
+To succeed, you must focus on identifying the start of each new reference. A new reference typically begins with a consistent, repeating pattern, such as:
+Numbered or Bracketed Identifiers: Look for sequential markers like [1], [2], or 1., 2..
+Author-Based Formats (Hanging Indent): In styles like APA or Harvard, a new reference often starts with an author's name at the beginning of a line that is flush-left, while subsequent lines of the same reference are indented. The start of the next reference is the next line that returns to the flush-left margin.
+A single, complete reference is defined as all text, including all its lines and internal line breaks, from its starting pattern up to the point just before the starting pattern of the next reference.
 
-    Your final output must be a single JSON object containing:
-    references: A list containing the references **with each reference as separated**.
+Extraction Guidelines
+Adhere to these rules without deviation:
+Completeness: Each item in the output list must be one single, complete reference. Do not split a multi-line reference into multiple entries.
+Fidelity: Preserve all original text, formatting (including line breaks and indentation), punctuation, and capitalization exactly as they appear in the source text.
+No Alterations: Do not correct typos, expand abbreviations, change formatting, or paraphrase any content.
+Exclusivity: Extract only the bibliographic entries. Omit any surrounding text like section headers ('References', 'Bibliography'), page numbers, or extraneous noise that is clearly not part of a reference entry.
+Order: Maintain the original order of the references as they appear in the input text.
+No Inference: If a reference is cut off or incomplete in the input, extract only the part that is present. Do not invent, infer, or hallucinate missing information.
+
+Output Format
+You must return a single JSON object with one key, "references". The value should be a list of strings. Each string in the list corresponds to one fully extracted reference.
+Example Success Case:
+{{
+  "references": [
+    "1. Author, A. A., & Author, B. B. (Year). Title of the work.\n   Location: Publisher.",
+    "2. Second, C. D. (Year). Another title that might span multiple\n   lines. Journal Name, Volume(Issue), pages.",
+    "[3] Third, E. F. et al. Final reference. (Year)."
+  ]
+}}
 
 
-    RULES AND CONSTRAINTS:
+Example Empty Case:
+If no references are found in the text, return an empty list.
 
-    NO HALLUCINATION: You must only use the text provided in the input JSON chunks.references are not present, you must return empty list ([]) for that key in your output. Do not invent any information.
+Generated json
+{{
+  "references": []
+}}
 
-    NO TEXT ALTERATION: The text for each field must be an exact concatenation of the text from the source chunks. Do not paraphrase, summarize, correct, or change the text in any way.
+{format_instructions}
 
-    HANDLE FRAGMENTATION: Correctly identify and merge text from multiple consecutive objects to form complete fields. For example, if a reference is split between objects at index 0 and 1, your reference item should be the combined text of both.
-
-    STRUCTURED OUTPUT: Your final output must be a single, valid JSON object following the specified format precisely.
-
-    {format_instructions}
-
-    Now, process the following JSON chunks:
-    {text}
-    """
+Begin extraction now. Process the following text input, applying the delimitation logic and guidelines with extreme precision.
+\"\"\"
+{text}
+\"\"\"
+"""
 }
 
 
@@ -228,6 +379,9 @@ def generate_header(journal_type="ieee",pdf_path=ORIGINAL_PDF):
 
     target = get_header_text(pdf_path)
 
+    print(target)
+    # print(json_data)
+
     docMatcher = DocumentMatcher()
     index, best_score, scores = docMatcher.find_best_header_index(json_data, target)
     print("Best matching index:", index)
@@ -237,7 +391,7 @@ def generate_header(journal_type="ieee",pdf_path=ORIGINAL_PDF):
 
     # --- Slice JSON up to a specific index ---
     flat_text = json.dumps(json_data[:index+5], indent=2)
-
+    print(flat_text)
     # --- Output parser ---
     parser = JsonOutputParser(pydantic_schema=LLMMetadataResponse)
 
@@ -249,8 +403,7 @@ def generate_header(journal_type="ieee",pdf_path=ORIGINAL_PDF):
     # --- Gemini LLM ---
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
-        google_api_key=API_KEY,
-        temperature=0
+        google_api_key=API_KEY
     )
 
     # --- Chain ---
@@ -261,7 +414,7 @@ def generate_header(journal_type="ieee",pdf_path=ORIGINAL_PDF):
         "text": flat_text,
         "format_instructions": parser.get_format_instructions()
     })
-    print(result["extracted_data"])
+    print(result)
     return get_latex_header(result["extracted_data"],journal_type), result["main_content_pointer"]
 
 
@@ -282,7 +435,7 @@ def generate_references(ref=[],pdf_path=ORIGINAL_PDF):
 
 
     # --- Slice JSON up to a specific index ---
-    flat_text = json.dumps(json_data[max(0, index-3):], indent=2)
+    flat_text = ' '.join([item.get("text", "") for item in json_data[max(0, index-3):]])
 
     # --- Output parser ---
     parser = JsonOutputParser(pydantic_schema=References)
@@ -295,8 +448,7 @@ def generate_references(ref=[],pdf_path=ORIGINAL_PDF):
     # --- Gemini LLM ---
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
-        google_api_key=API_KEY,
-        temperature=0
+        google_api_key=API_KEY
     )
 
     # --- Chain ---
@@ -309,5 +461,6 @@ def generate_references(ref=[],pdf_path=ORIGINAL_PDF):
     })
     print(result["references"])
     return result["references"]
+
 
 

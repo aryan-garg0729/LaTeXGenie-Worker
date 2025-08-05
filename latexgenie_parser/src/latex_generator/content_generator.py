@@ -60,7 +60,7 @@ def json_to_latex(data: List[Dict[str, Any]], column: str, start_index: int = 0)
             elif level == 5:
                 section = True
                 latex_parts.append(f"\subparagraph*{{{escaped_text}}}")
-            elif section:
+            else:
                 latex_parts.append(escaped_text)
 
             i += 1

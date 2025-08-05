@@ -883,6 +883,7 @@ def generate_header_and_references(journal_type, pdf_path):
 
 
 def get_latex_header(metadata,journal_type='ieee'):
+    metadata['abstract'] = escape_latex(metadata['abstract'])
     header_generator = LaTeXHeaderGenerator()
     header = ""
     
