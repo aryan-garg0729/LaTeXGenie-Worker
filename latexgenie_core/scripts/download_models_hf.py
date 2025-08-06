@@ -2,11 +2,6 @@ import json
 import os
 import requests
 from huggingface_hub import snapshot_download
-# from dotenv import load_dotenv
-# load_dotenv()
-
-# device = os.getenv('DEVICE', 'cpu').lower()
-
 
 def download_json(url):
     # Download the JSON file
@@ -69,8 +64,8 @@ if __name__ == '__main__':
                 "enable":True
             }
         },
-        "device-mode": 'cpu'
-        # "device-mode": 'cuda'
+        # "device-mode": 'cpu'
+        "device-mode": 'cuda'
     }
 
     download_and_modify_json(json_path, config_file, json_mods)

@@ -17,11 +17,11 @@ def init_args():
     parser = argparse.ArgumentParser()
     # params for prediction engine
     
-    # parser.add_argument("--device", type=str, default='cuda')
-    # parser.add_argument("--use_gpu", type=str2bool, default=True)
+    parser.add_argument("--device", type=str, default='cuda')
+    parser.add_argument("--use_gpu", type=str2bool, default=True)
 
-    parser.add_argument("--device", type=str, default='cpu')
-    parser.add_argument("--use_gpu", type=str2bool, default=False)
+    # parser.add_argument("--device", type=str, default='cpu')
+    # parser.add_argument("--use_gpu", type=str2bool, default=False)
 
     parser.add_argument("--det", type=str2bool, default=True)
     parser.add_argument("--rec", type=str2bool, default=True)
