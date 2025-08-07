@@ -2,7 +2,7 @@ import re
 import itertools
 from bs4 import BeautifulSoup
 from typing import List, Optional
-from utils.broken_char import escape_latex
+from latexgenie_parser.utils.broken_char import escape_latex
 
 
 def html_table_to_2d_array(html: str) -> List[List[Optional[str]]]:
