@@ -11,7 +11,7 @@ import json
 from latexgenie_parser.utils.logger import Logger
 from config import XML_OUTPUT, CONTAINER_NAME, GROBID_BASE_URL
 import re
-from utils.broken_char import escape_latex
+from latexgenie_parser.utils.broken_char import escape_latex
 log = Logger.get_logger()
 
 
