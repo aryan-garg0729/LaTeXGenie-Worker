@@ -126,7 +126,10 @@ def replace_broken(text, diacritics_map):
     
     return ''.join(processed_segments)
 
-def escape_latex(text: str) -> str:
+def escape_latex(text) -> str:
+    if not isinstance(text, str):
+        return ""
+    
     replacements = {
         '\\': r'\textbackslash{}',
         '{': r'\{',

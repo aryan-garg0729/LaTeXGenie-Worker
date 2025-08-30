@@ -1,66 +1,77 @@
 import logging
-import os
 from pathlib import Path
 from config import BASE_DIR
 
-# Ensure logs directory exists
+# === Ensure logs directory exists ===
 LOGS_DIR = Path(BASE_DIR) / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
-
 LOG_FILE = LOGS_DIR / "log_file.log"
 
+
+# === Console log colors ===
+class LogColors:
+    RESET = "\033[0m"
+    GREY = "\033[90m"
+    RED = "\033[91m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    BLUE = "\033[94m"
+    MAGENTA = "\033[95m"
+    CYAN = "\033[96m"
+    WHITE = "\033[97m"
+
+    LEVEL_COLORS = {
+        logging.DEBUG: GREY,
+        logging.INFO: GREEN,
+        logging.WARNING: YELLOW,
+        logging.ERROR: RED,
+        logging.CRITICAL: MAGENTA,
+    }
+
+
+# === Formatter with color for console ===
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        color = LogColors.LEVEL_COLORS.get(record.levelno, LogColors.WHITE)
+        message = super().format(record)
+        return f"{color}{message}{LogColors.RESET}"
+
+
+# === Singleton Logger ===
 class Logger:
-    _instance = None  # Singleton instance
+    _instance = None
 
     @staticmethod
-    def get_logger(stage=''):
-        """Returns a global logger instance."""
-        if Logger._instance is None:
-            Logger._instance = logging.getLogger("root")
-            Logger._instance.setLevel(logging.INFO)
-            Logger._instance.handlers.clear()
+    def get_logger():
+        if Logger._instance:
+            return Logger._instance
 
-            file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-            stream_handler = logging.StreamHandler()
+        logger = logging.getLogger("global_logger")
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False  # Prevent propagation to root
 
-            # Get unique instance/container identifier
-            # instance_id = str(os.getpid())
-
-            instance_id = (
-                os.environ.get("HOSTNAME") or
-                os.environ.get("INSTANCE_ID") or
-                os.environ.get("CONTAINER_NAME") or
-                str(os.getpid()) or
-                "unknown-instance"
+        if not logger.handlers:
+            # === File handler ===
+            file_handler = logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8')
+            file_formatter = logging.Formatter(
+                "%(asctime)s | %(levelname)-8s | %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
             )
+            file_handler.setFormatter(file_formatter)
 
-            # Enhanced log format: timestamp | instance | filename:line | level | message
-            log_format = (
-                "%(asctime)s | %(instance_id)-18s | %(filename)-20s:%(lineno)d | "
-                "%(levelname)-7s | %(message)s"
+            # === Console handler ===
+            console_handler = logging.StreamHandler()
+            console_formatter = ColoredFormatter(
+                "%(asctime)s | %(levelname)-8s | %(message)s",
+                datefmt="%H:%M:%S"
             )
+            console_handler.setFormatter(console_formatter)
 
-            class ContextFilter(logging.Filter):
-                def filter(self, record):
-                    record.instance_id = instance_id
-                    return True
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
 
-            formatter = logging.Formatter(log_format)
-            file_handler.setFormatter(formatter)
-            stream_handler.setFormatter(formatter)
+        Logger._instance = logger
+        return logger
 
-            # Add instance id filter
-            file_handler.addFilter(ContextFilter())
-            stream_handler.addFilter(ContextFilter())
-
-            Logger._instance.addHandler(file_handler)
-            Logger._instance.addHandler(stream_handler)
-
-            if stage == "production":
-                Logger._instance.setLevel(logging.ERROR)
-
-        return Logger._instance
-
-# Example usage
 log = Logger.get_logger()
-log.info("Global logger initialized!")
+log.info("Global Logger initialized")

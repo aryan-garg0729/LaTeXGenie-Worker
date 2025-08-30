@@ -82,19 +82,88 @@ def json_to_latex(data: List[Dict[str, Any]], column: str, start_index: int = 0)
 
         if obj_type == "equation":
             equation = obj.get("text", "").strip().strip('$')
-            latex_parts.append(f"\\begin{{equation}}\n{equation}\n\end{{equation}}")
+            latex_parts.append(f"\\begin{{equation}}{equation}\end{{equation}}")
             i += 1
             continue
 
-        if obj_type == "table":
-            table_width = r"\\textwidth"
-            caption = " ".join(obj.get("table_caption", []))
-            foot_notes = obj.get("table_footnote", [])
-            html_body = obj.get("table_body", "")
-            table_latex = convert_html_table_to_latex(html_body)
+        # if obj_type == "table":
+        #     table_width = r"\\textwidth"
+        #     caption = " ".join(obj.get("table_caption", []))
+        #     foot_notes = obj.get("table_footnote", [])
+        #     html_body = obj.get("table_body", "")
+        #     table_latex = convert_html_table_to_latex(html_body)
 
+        #     escaped_caption = escape_latex(caption)
+        #     escaped_footnotes = [escape_latex(fn) for fn in foot_notes]
+
+        #     tablenotes_block = ""
+        #     if escaped_footnotes:
+        #         tablenotes_block = (
+        #             "\\begin{tablenotes}\n"
+        #             "\\footnotesize\n"
+        #             + "\n".join([f"\item {note}" for note in escaped_footnotes]) + "\n"
+        #             "\end{tablenotes}\n"
+        #         )
+
+        #     latex_parts.append(
+        #         "\\begin{table*}[t]\n"
+        #         "\centering\n"
+        #         "\\begin{threeparttable}\n"
+        #         f"\caption*{{{escaped_caption}}}\n"
+        #         f"{table_latex}\n"
+        #         f"{tablenotes_block}"
+        #         "\end{threeparttable}\n"
+        #         "\end{table*}"
+        #     )
+        #     i += 1
+        #     continue
+        if obj_type == "table":
+            caption = " ".join(obj.get("table_caption", []))
+            html_body = obj.get("table_body", "")
+
+            # === Extract row function ===
+            def extract_rows(html: str) -> List[List[str]]:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html, "html.parser")
+                return [
+                    [td.get_text(strip=True) for td in tr.find_all(["td", "th"])]
+                    for tr in soup.find_all("tr")
+                ]
+
+            all_rows = extract_rows(html_body)
+            col_count = len(all_rows[0]) if all_rows else 0
+            j = i + 1
+
+            while j < len(data):
+                next_obj = data[j]
+                if next_obj.get("type") != "table":
+                    break
+
+                next_caption = next_obj.get("table_caption", [])
+                # next_footnotes = next_obj.get("table_footnote", [])
+                next_body = next_obj.get("table_body", "")
+                next_rows = extract_rows(next_body)
+
+                if next_caption:
+                    break  # treat as start of new logical table
+
+                if not next_rows or len(next_rows[0]) != col_count:
+                    break  # column mismatch
+
+                all_rows.extend(next_rows)
+                j += 1
+
+            # Look at the last table in the merged range for footnotes
+            last_footnotes = data[j - 1].get("table_footnote", [])
+            escaped_footnotes = [escape_latex(fn) for fn in last_footnotes]
+
+            # === Convert merged rows to HTML again ===
+            merged_html = "<table>\n" + "\n".join(
+                "<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in all_rows
+            ) + "\n</table>"
+
+            table_latex = convert_html_table_to_latex(merged_html)
             escaped_caption = escape_latex(caption)
-            escaped_footnotes = [escape_latex(fn) for fn in foot_notes]
 
             tablenotes_block = ""
             if escaped_footnotes:
@@ -115,7 +184,8 @@ def json_to_latex(data: List[Dict[str, Any]], column: str, start_index: int = 0)
                 "\end{threeparttable}\n"
                 "\end{table*}"
             )
-            i += 1
+
+            i = j  # skip all merged table chunks
             continue
 
         i += 1
