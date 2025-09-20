@@ -1,52 +1,156 @@
+# import redis
+# import json
+# import dotenv
+# import os
+# from supabase import create_client, Client
+# # Import pipeline and log setup
+# from latexgenie_parser.src.main import run_pipeline  
+# from latexgenie_parser.src.old.general import run_pipeline as general_pipeline  
+# from latexgenie_parser.utils.logger import Logger
+# from config import DATA_DIR
+# dotenv.load_dotenv()
+
+# redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+# log = Logger.get_logger()
+# r = redis.from_url(redis_url)
+
+# SUPABASE_URL = os.getenv("SUPABASE_URL")
+# SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+# supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+# def process_job(job):
+#     try:
+        
+#         pdf_path = job["filePath"]  # e.g., "pdfs/user-1234-file.pdf"
+#         column = job.get("column", "one")
+#         journal = job.get("journal", "elsevier")
+#         general = job.get("general",False)
+
+#         log.info(f"Running pipeline for job_id: {job['job_id']}")
+
+#         # --- Step 1: PDF Direct download from Supabase  ---
+#         file_data = supabase.storage.from_("latexgenie").download(pdf_path)
+
+#         # --- Step 2: Save the file locally ---
+#         with open(f"{DATA_DIR}/input.pdf", "wb") as f:
+#             f.write(file_data)
+
+#         # --- Step 3: Process file ---
+#         if general:
+#             output = general_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+#         else:
+#             output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+
+#         # --- Step 4: upload zip to bucket ---
+#         output_path = pdf_path.replace("pdfs/", "output/").replace(".pdf", ".zip")
+#         with open(output, "rb") as f:
+#             supabase.storage.from_("zips").upload(output_path, f.read())
+        
+#         return {
+#             "usage_id": job["usage_id"],
+#             "owner": job["owner"],
+#             "job_id": job["job_id"],
+#             "user_id": job["user_id"],
+#             "org_id": job["org_id"],
+#             "is_pdf": job["is_pdf"],
+#             "input_file": pdf_path,
+#             "creditsRequired": job["creditsRequired"],
+#             "status":"COMPLETED",
+#             "zip": {
+#                 "file_name": output_path
+#             }
+#         }
+
+#     except Exception as e:
+#         log.error(f"Failed to process job {job.get('job_id')}: {str(e)}")
+#         return {
+#             "usage_id": job["usage_id"],
+#             "owner": job["owner"],
+#             "job_id": job["job_id"],
+#             "user_id": job["user_id"],
+#             "org_id": job["org_id"],
+#             "is_pdf": job["is_pdf"],
+#             "input_file": pdf_path,
+#             "creditsRequired": job["creditsRequired"],
+#             "status":"FAILED",
+#             "zip": {
+#                 "file_name": ""
+#             },
+#             "error": str(e)
+#         }
+
+# def main():
+#     try:
+#         while True:
+#             result = r.blpop("fileProcessingQueue", timeout=5)
+#             if result:
+#                 _, job_raw = result
+#                 job = json.loads(job_raw)
+#                 output = process_job(job)
+#                 count = r.publish("latex_results", json.dumps(output))
+#                 log.info(f"Published {count} messages to 'latex_results' channel.")
+#             else:
+#                 log.info("No jobs in the queue, waiting...")
+#     except KeyboardInterrupt:
+#         log.info("Worker stopped by user.")
+
+
+
 import redis
 import json
 import dotenv
 import os
-from supabase import create_client, Client
-# Import pipeline and log setup
+import boto3
 from latexgenie_parser.src.main import run_pipeline  
 from latexgenie_parser.src.old.general import run_pipeline as general_pipeline  
 from latexgenie_parser.utils.logger import Logger
 from config import DATA_DIR
+
 dotenv.load_dotenv()
 
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 log = Logger.get_logger()
 r = redis.from_url(redis_url)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+# --- S3 Setup ---
+AWS_REGION = os.getenv("AWS_REGION")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_BUCKET = os.getenv("S3_BUCKET", "latexgenie")  # default bucket name
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+s3 = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
+
 
 def process_job(job):
     try:
-        
         pdf_path = job["filePath"]  # e.g., "pdfs/user-1234-file.pdf"
         column = job.get("column", "one")
         journal = job.get("journal", "elsevier")
-        general = job.get("general",False)
+        general = job.get("general", False)
 
         log.info(f"Running pipeline for job_id: {job['job_id']}")
 
-        # --- Step 1: PDF Direct download from Supabase  ---
-        file_data = supabase.storage.from_("latexgenie").download(pdf_path)
+        # --- Step 1: PDF Direct download from S3 ---
+        local_pdf_path = f"{DATA_DIR}/input.pdf"
+        s3.download_file(S3_BUCKET, pdf_path, local_pdf_path)
 
-        # --- Step 2: Save the file locally ---
-        with open(f"{DATA_DIR}/input.pdf", "wb") as f:
-            f.write(file_data)
-
-        # --- Step 3: Process file ---
+        # --- Step 2: Process file ---
         if general:
-            output = general_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+            output = general_pipeline(local_pdf_path, column, journal)
         else:
-            output = run_pipeline(f'{DATA_DIR}/input.pdf', column, journal)
+            output = run_pipeline(local_pdf_path, column, journal)
 
-        # --- Step 4: upload zip to bucket ---
-        output_path = pdf_path.replace("pdfs/", "output/").replace(".pdf", ".zip")
+        # --- Step 3: Upload result zip to S3 ---
+        output_path = pdf_path.replace("pdfs/", "zips/").replace(".pdf", ".zip")
         with open(output, "rb") as f:
-            supabase.storage.from_("zips").upload(output_path, f.read())
-        
+            s3.upload_fileobj(f, S3_BUCKET, output_path)
+
         return {
             "usage_id": job["usage_id"],
             "owner": job["owner"],
@@ -56,7 +160,7 @@ def process_job(job):
             "is_pdf": job["is_pdf"],
             "input_file": pdf_path,
             "creditsRequired": job["creditsRequired"],
-            "status":"COMPLETED",
+            "status": "COMPLETED",
             "zip": {
                 "file_name": output_path
             }
@@ -71,14 +175,15 @@ def process_job(job):
             "user_id": job["user_id"],
             "org_id": job["org_id"],
             "is_pdf": job["is_pdf"],
-            "input_file": pdf_path,
+            "input_file": job.get("filePath", ""),
             "creditsRequired": job["creditsRequired"],
-            "status":"FAILED",
+            "status": "FAILED",
             "zip": {
                 "file_name": ""
             },
             "error": str(e)
         }
+
 
 def main():
     try:
@@ -94,4 +199,3 @@ def main():
                 log.info("No jobs in the queue, waiting...")
     except KeyboardInterrupt:
         log.info("Worker stopped by user.")
-
